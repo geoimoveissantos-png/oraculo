@@ -1,0 +1,8 @@
+{
+  "name": "Mapa Numerológico & Prosperidade",
+  "description": "Gerador de Mapa Numerológico e Diagnóstico de Prosperidade completo com cálculo de Caminho de Vida, Expressão, Alma, checkout Pix e exportação em PDF.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
