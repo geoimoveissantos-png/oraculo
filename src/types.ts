@@ -128,3 +128,18 @@ export interface NumerologyReport {
 }
 
 export type AppStep = 'form' | 'preview' | 'full_report';
+
+export type PaymentStatus = 'pago' | 'pendente';
+
+export interface AdminOrderRecord {
+  id: string; // unique referralId or record ID
+  clientName: string;
+  birthDate: string;
+  pdfEmissionDate: string; // Date and time when the PDF was emitted/requested
+  paymentStatus: PaymentStatus;
+  amount: number;
+  pixTxId?: string;
+  report?: NumerologyReport;
+  createdAt: string;
+  updatedAt: string;
+}

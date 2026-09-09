@@ -1,7 +1,11 @@
 import React from 'react';
-import { Compass, ShieldCheck, Sparkles } from 'lucide-react';
+import { Compass, ShieldCheck, Sparkles, Lock } from 'lucide-react';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onOpenAdmin?: () => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
   return (
     <footer id="app-footer" className="mt-20 border-t border-slate-800/80 bg-[#080913] py-12 text-slate-400 text-xs">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -30,10 +34,21 @@ export const Footer: React.FC = () => {
           </span>
         </div>
 
-        <div className="text-center md:text-right text-[11px] text-slate-400">
-          © {new Date().getFullYear()} Todos os direitos reservados.
+        <div className="flex items-center gap-4 text-center md:text-right text-[11px] text-slate-400">
+          <span>© {new Date().getFullYear()} Todos os direitos reservados.</span>
+          {onOpenAdmin && (
+            <button
+              onClick={onOpenAdmin}
+              className="inline-flex items-center gap-1 text-slate-500 hover:text-amber-400 transition-colors cursor-pointer"
+              title="Acesso Administrativo"
+            >
+              <Lock className="w-3 h-3" />
+              <span>Painel Admin</span>
+            </button>
+          )}
         </div>
       </div>
     </footer>
   );
 };
+

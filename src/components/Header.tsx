@@ -1,12 +1,13 @@
 import React from 'react';
-import { Sparkles, Compass, ShieldCheck } from 'lucide-react';
+import { Sparkles, Compass, ShieldCheck, Shield } from 'lucide-react';
 
 interface HeaderProps {
   onNewCalculation?: () => void;
   isUnlocked?: boolean;
+  onOpenAdmin?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onNewCalculation, isUnlocked }) => {
+export const Header: React.FC<HeaderProps> = ({ onNewCalculation, isUnlocked, onOpenAdmin }) => {
   return (
     <header id="app-header" className="border-b border-amber-500/20 bg-[#0c0e1b]/80 backdrop-blur-md sticky top-0 z-40">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
@@ -32,8 +33,8 @@ export const Header: React.FC<HeaderProps> = ({ onNewCalculation, isUnlocked }) 
           </div>
         </div>
 
-        {/* Right Status / Badge */}
-        <div className="flex items-center gap-3">
+        {/* Right Status / Badge & Actions */}
+        <div className="flex items-center gap-2 sm:gap-3">
           {isUnlocked ? (
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-medium">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
@@ -50,9 +51,21 @@ export const Header: React.FC<HeaderProps> = ({ onNewCalculation, isUnlocked }) 
             <button
               onClick={onNewCalculation}
               id="header-new-calc-btn"
-              className="text-xs text-slate-300 hover:text-amber-300 border border-slate-700/80 hover:border-amber-500/40 px-3 py-1.5 rounded-lg transition-all"
+              className="text-xs text-slate-300 hover:text-amber-300 border border-slate-700/80 hover:border-amber-500/40 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
             >
               Novo Mapa
+            </button>
+          )}
+
+          {onOpenAdmin && (
+            <button
+              onClick={onOpenAdmin}
+              id="header-admin-btn"
+              className="flex items-center gap-1.5 text-xs text-amber-300/90 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-500/50 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+              title="Ambiente Administrativo (Login, Status de Pagamentos e Emissões)"
+            >
+              <Shield className="w-3.5 h-3.5 text-amber-400" />
+              <span className="font-medium">Painel Admin</span>
             </button>
           )}
         </div>
@@ -60,3 +73,4 @@ export const Header: React.FC<HeaderProps> = ({ onNewCalculation, isUnlocked }) 
     </header>
   );
 };
+

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NumerologyReport } from '../types';
 import { generatePDF } from '../utils/pdfGenerator';
 import { calculateAuraProfile } from '../utils/numerology';
+import { recordReportEmission } from '../utils/adminStorage';
 import { 
   Download, 
   Share2, 
@@ -51,6 +52,7 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
     setIsDownloading(true);
     try {
       generatePDF(report);
+      recordReportEmission(report, 'pago');
     } catch (err) {
       console.error('Error generating PDF:', err);
     } finally {

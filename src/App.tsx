@@ -8,7 +8,9 @@ import { PixModal } from './components/PixModal';
 import { FullReportDashboard } from './components/FullReportDashboard';
 import { ShareModal } from './components/ShareModal';
 import { Footer } from './components/Footer';
-import { Sparkles, Compass } from 'lucide-react';
+import { AdminDashboardModal } from './components/AdminDashboardModal';
+import { recordReportEmission, updatePaymentStatus, getAdminOrders } from './utils/adminStorage';
+import { Sparkles } from 'lucide-react';
 
 export default function App() {
   const [step, setStep] = useState<AppStep>('form');
@@ -16,10 +18,11 @@ export default function App() {
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
   const [isPixModalOpen, setIsPixModalOpen] = useState<boolean>(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
   const [refInvitedBy, setRefInvitedBy] = useState<string | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
 
-  // Check URL query parameters for referral link (?ref=...)
+  // Check URL query parameters for referral link (?ref=...) or admin (?admin=true / #admin)
   useEffect(() => {
     try {
       const urlParams = new URLSearchParams(window.location.search);
@@ -27,10 +30,36 @@ export default function App() {
       if (ref) {
         setRefInvitedBy(ref);
       }
+      if (urlParams.get('admin') === 'true' || window.location.hash === '#admin') {
+        setIsAdminModalOpen(true);
+      }
     } catch {
       // Safe fallback
     }
   }, []);
+
+  // Sync unlock state if admin changes payment status in background/tab
+  useEffect(() => {
+    const handleOrdersChange = () => {
+      if (report) {
+        const savedUnlocked = localStorage.getItem(`unlocked_${report.referralId}`);
+        const shouldBeUnlocked = savedUnlocked === 'true';
+        if (shouldBeUnlocked !== isUnlocked) {
+          setIsUnlocked(shouldBeUnlocked);
+          if (shouldBeUnlocked && step === 'preview') {
+            setStep('full_report');
+          } else if (!shouldBeUnlocked && step === 'full_report') {
+            setStep('preview');
+          }
+        }
+      }
+    };
+
+    window.addEventListener('admin_orders_updated', handleOrdersChange);
+    return () => {
+      window.removeEventListener('admin_orders_updated', handleOrdersChange);
+    };
+  }, [report, isUnlocked, step]);
 
   // Handle Form Submission (Step 1 -> Step 2)
   const handleFormSubmit = (inputs: UserInputs) => {
@@ -41,7 +70,12 @@ export default function App() {
 
       // Check if this specific report was previously unlocked in localStorage
       const savedUnlocked = localStorage.getItem(`unlocked_${generated.referralId}`);
-      if (savedUnlocked === 'true') {
+      const isAlreadyUnlocked = savedUnlocked === 'true';
+
+      // Record PDF emission in Admin registry
+      recordReportEmission(generated, isAlreadyUnlocked ? 'pago' : 'pendente');
+
+      if (isAlreadyUnlocked) {
         setIsUnlocked(true);
         setStep('full_report');
       } else {
@@ -64,6 +98,7 @@ export default function App() {
   const handlePaymentSuccess = () => {
     if (report) {
       localStorage.setItem(`unlocked_${report.referralId}`, 'true');
+      updatePaymentStatus(report.referralId, 'pago');
     }
     setIsUnlocked(true);
     setIsPixModalOpen(false);
@@ -82,6 +117,15 @@ export default function App() {
   // Back to edit form
   const handleEditInputs = () => {
     setStep('form');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Select a report from Admin Dashboard to view in the app
+  const handleSelectReportFromAdmin = (selectedReport: NumerologyReport) => {
+    setReport(selectedReport);
+    const isReportUnlocked = localStorage.getItem(`unlocked_${selectedReport.referralId}`) === 'true';
+    setIsUnlocked(isReportUnlocked);
+    setStep(isReportUnlocked ? 'full_report' : 'preview');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -106,6 +150,7 @@ export default function App() {
       <Header
         onNewCalculation={step !== 'form' ? handleNewCalculation : undefined}
         isUnlocked={isUnlocked}
+        onOpenAdmin={() => setIsAdminModalOpen(true)}
       />
 
       {/* Main Container */}
@@ -153,8 +198,16 @@ export default function App() {
         />
       )}
 
+      {/* Admin Dashboard Modal */}
+      <AdminDashboardModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        onSelectReportToView={handleSelectReportFromAdmin}
+      />
+
       {/* Footer */}
-      <Footer />
+      <Footer onOpenAdmin={() => setIsAdminModalOpen(true)} />
     </div>
   );
 }
+
