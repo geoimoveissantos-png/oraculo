@@ -49,6 +49,8 @@ export interface SoundFrequency {
   sacredPurpose: string;
   bestListeningTime: string;
   recommendation: string;
+  youtubeUrl?: string;
+  youtubeEmbedId?: string;
 }
 
 export interface SacredSymbolAndVerse {

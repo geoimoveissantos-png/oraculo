@@ -735,6 +735,52 @@ export function getEnergyBaths(): EnergyBath[] {
   ];
 }
 
+// YouTube mappings for Solfeggio & Prosperity Frequencies
+export const FREQUENCY_YOUTUBE_MAP: Record<number, { url: string; embedId: string }> = {
+  396: {
+    url: 'https://youtu.be/gmJwaocIp58?si=KiJKeYNhGiiwvSnS',
+    embedId: 'gmJwaocIp58'
+  },
+  432: {
+    url: 'https://www.youtube.com/watch?v=HyI8o_EA3os',
+    embedId: 'HyI8o_EA3os'
+  },
+  528: {
+    url: 'https://www.youtube.com/watch?v=1MPRbX7ACh8&list=PLwDmgzun-F5U4Q1EtkARKvAsjY1VtUAQR',
+    embedId: '1MPRbX7ACh8'
+  },
+  639: {
+    url: 'https://www.youtube.com/watch?v=5T_QxR8aclQ',
+    embedId: '5T_QxR8aclQ'
+  },
+  741: {
+    url: 'https://www.youtube.com/watch?v=7NKNx3dESxQ',
+    embedId: '7NKNx3dESxQ'
+  },
+  888: {
+    url: 'https://www.youtube.com/watch?v=suzfhx5rHRg',
+    embedId: 'suzfhx5rHRg'
+  },
+  8889: {
+    url: 'https://www.youtube.com/watch?v=suzfhx5rHRg',
+    embedId: 'suzfhx5rHRg'
+  },
+  963: {
+    url: 'https://www.youtube.com/watch?v=xVh49FvD5FU',
+    embedId: 'xVh49FvD5FU'
+  }
+};
+
+export function getFrequencyYouTubeInfo(hz: number): { url: string; embedId: string } {
+  if (FREQUENCY_YOUTUBE_MAP[hz]) {
+    return FREQUENCY_YOUTUBE_MAP[hz];
+  }
+  return {
+    url: `https://www.youtube.com/results?search_query=frequencia+${hz}+hz+solfeggio`,
+    embedId: ''
+  };
+}
+
 // Generate Sound Frequencies & Solfeggio Matrix
 export function getSoundFrequencies(): SoundFrequency[] {
   return [
@@ -744,7 +790,9 @@ export function getSoundFrequencies(): SoundFrequency[] {
       element: 'Chakra Raiz (Muladhara)',
       sacredPurpose: 'Desintegra o medo da falta, inseguranças financeiras herdadas da ancestralidade e traumas do passado que travam a coragem de empreender e prosperar.',
       bestListeningTime: 'À noite, antes de dormir, ou em momentos de sobrecarga mental.',
-      recommendation: 'Ouça por 15 a 20 minutos com fones de ouvido em volume médio-baixo.'
+      recommendation: 'Ouça por 15 a 20 minutos com fones de ouvido em volume médio-baixo.',
+      youtubeUrl: 'https://youtu.be/gmJwaocIp58?si=KiJKeYNhGiiwvSnS',
+      youtubeEmbedId: 'gmJwaocIp58'
     },
     {
       hz: 432,
@@ -752,7 +800,9 @@ export function getSoundFrequencies(): SoundFrequency[] {
       element: 'Equilíbrio Bioenergético Total',
       sacredPurpose: 'Vibra na matemática sagrada da natureza (razão áurea). Alinha os dois hemisférios cerebrais, reduz o cortisol e restaura a clareza para tomadas de decisão de alto impacto.',
       bestListeningTime: 'Durante o trabalho, estudos, leitura ou planejamento estratégico.',
-      recommendation: 'Pode ser tocado como som ambiente contínuo no escritório ou em casa.'
+      recommendation: 'Pode ser tocado como som ambiente contínuo no escritório ou em casa.',
+      youtubeUrl: 'https://www.youtube.com/watch?v=HyI8o_EA3os',
+      youtubeEmbedId: 'HyI8o_EA3os'
     },
     {
       hz: 528,
@@ -760,7 +810,9 @@ export function getSoundFrequencies(): SoundFrequency[] {
       element: 'Chakra Cardíaco & Campo Morfogenético',
       sacredPurpose: 'A mais famosa das frequências de Solfeggio. Conhecida como o tom da transformação e milagres, desbloqueia a capacidade inata de atrair sincronismos afortunados e cura vibracional.',
       bestListeningTime: 'Pela manhã ao despertar, durante visualizações criativas de abundância.',
-      recommendation: 'Pratique 15 minutos em estado meditativo focando na sua meta financeira.'
+      recommendation: 'Pratique 15 minutos em estado meditativo focando na sua meta financeira.',
+      youtubeUrl: 'https://www.youtube.com/watch?v=1MPRbX7ACh8&list=PLwDmgzun-F5U4Q1EtkARKvAsjY1VtUAQR',
+      youtubeEmbedId: '1MPRbX7ACh8'
     },
     {
       hz: 639,
@@ -768,7 +820,9 @@ export function getSoundFrequencies(): SoundFrequency[] {
       element: 'Chakra Laríngeo & Comunicação Empática',
       sacredPurpose: 'Dissolve atritos interpessoais, magnetiza clientes nobres e parceiros de negócios honestos, harmonizando o ambiente familiar e corporativo.',
       bestListeningTime: 'Antes de reuniões importantes, negociações contratuais ou vendas.',
-      recommendation: 'Ouça 10 minutos antes de fechar acordos para ancorar diplomacia e ganho mútuo.'
+      recommendation: 'Ouça 10 minutos antes de fechar acordos para ancorar diplomacia e ganho mútuo.',
+      youtubeUrl: 'https://www.youtube.com/watch?v=5T_QxR8aclQ',
+      youtubeEmbedId: '5T_QxR8aclQ'
     },
     {
       hz: 741,
@@ -776,7 +830,9 @@ export function getSoundFrequencies(): SoundFrequency[] {
       element: 'Chakra Frontal (Terceiro Olho)',
       sacredPurpose: 'Limpa toxinas eletromagnéticas mentais, aguça a percepção extra-sensorial e auxilia a enxergar saídas inovadoras onde outros enxergam apenas dificuldades.',
       bestListeningTime: 'Ao enfrentar dilemas complexos ou planejar novos projetos e empreendimentos.',
-      recommendation: 'Combine com respirações profundas de 4 segundos inspirando e 4 expirando.'
+      recommendation: 'Combine com respirações profundas de 4 segundos inspirando e 4 expirando.',
+      youtubeUrl: 'https://www.youtube.com/watch?v=7NKNx3dESxQ',
+      youtubeEmbedId: '7NKNx3dESxQ'
     },
     {
       hz: 888,
@@ -784,7 +840,9 @@ export function getSoundFrequencies(): SoundFrequency[] {
       element: 'Vórtice da Manifestação Material',
       sacredPurpose: 'A vibração geométrica do número 8 multiplicado na trindade cósmica (888). Ativa o fluxo de prosperidade líquida, bens materiais, pagamentos inesperados e plenitude física.',
       bestListeningTime: 'Quintas-feiras e ao checar contas, faturamento ou investimentos.',
-      recommendation: 'Sintonize enquanto visualiza o dinheiro fluindo com alegria e propósito elevado.'
+      recommendation: 'Sintonize enquanto visualiza o dinheiro fluindo com alegria e propósito elevado.',
+      youtubeUrl: 'https://www.youtube.com/watch?v=suzfhx5rHRg',
+      youtubeEmbedId: 'suzfhx5rHRg'
     },
     {
       hz: 963,
@@ -792,7 +850,9 @@ export function getSoundFrequencies(): SoundFrequency[] {
       element: 'Chakra Coronário (Sahasrara)',
       sacredPurpose: 'Religa o ser à Fonte Criadora Suprema. Concede a certeza interior de que nada falta, pois você está eternamente amparado pela Providência do Criador.',
       bestListeningTime: 'Antes de orações, meditações profundas ou ao recolher-se à noite.',
-      recommendation: 'Permita que o som ressoe suavemente, promovendo um sono reparador de alta frequência.'
+      recommendation: 'Permita que o som ressoe suavemente, promovendo um sono reparador de alta frequência.',
+      youtubeUrl: 'https://www.youtube.com/watch?v=xVh49FvD5FU',
+      youtubeEmbedId: 'xVh49FvD5FU'
     }
   ];
 }

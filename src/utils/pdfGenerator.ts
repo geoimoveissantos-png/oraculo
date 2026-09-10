@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import { NumerologyReport } from '../types';
-import { calculateAuraProfile } from './numerology';
+import { calculateAuraProfile, getFrequencyYouTubeInfo } from './numerology';
 import { getRecommendedBooksForReport, generateBookCoverDataUrl } from './bookRecommendations';
 
 export function generatePDF(report: NumerologyReport) {
@@ -1306,7 +1306,7 @@ export function generatePDF(report: NumerologyReport) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9.5);
   doc.setTextColor(PRIMARY);
-  doc.text('Matriz de Sons Sagrados & Frequências Quânticas de Transformação:', margin + 6, freqTableY + 7.5);
+  doc.text('Matriz de Sons Sagrados & Frequências Quânticas (Clique para Ouvir no YouTube):', margin + 6, freqTableY + 7.5);
 
   // Table header
   const thY = freqTableY + 11.5;
@@ -1316,7 +1316,7 @@ export function generatePDF(report: NumerologyReport) {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6.5);
   doc.setTextColor(ACCENT_GOLD_LIGHT);
-  doc.text('FREQUÊNCIA', margin + 8, thY + 3.8);
+  doc.text('FREQUÊNCIA / VÍDEO', margin + 7, thY + 3.8);
   doc.text('PROPÓSITO SAGRADO DE ATIVAÇÃO', margin + 34, thY + 3.8);
   doc.text('CHAKRA / VÓRTICE', margin + 116, thY + 3.8);
   doc.text('QUANDO OUVIR', margin + 152, thY + 3.8);
@@ -1331,11 +1331,36 @@ export function generatePDF(report: NumerologyReport) {
     doc.setLineWidth(0.2);
     doc.roundedRect(margin + 5, rowY, contentWidth - 10, rowH, 0.8, 0.8, 'S');
 
+    // YouTube URL resolution (use report value or fallback to curated frequency map)
+    const ytInfo = getFrequencyYouTubeInfo(sf.hz);
+    const ytUrl = sf.youtubeUrl || ytInfo.url;
+
     // Hz badge
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
+    doc.setFontSize(8.0);
     doc.setTextColor(sf.hz === 528 || sf.hz === 888 ? ACCENT_GOLD : PRIMARY);
-    doc.text(`${sf.hz} Hz`, margin + 8, rowY + 7.5);
+    doc.text(`${sf.hz} Hz`, margin + 7, rowY + 5.2);
+
+    // Styled YouTube Button
+    const ytBtnX = margin + 6.5;
+    const ytBtnY = rowY + 6.8;
+    const ytBtnW = 23.5;
+    const ytBtnH = 4.8;
+
+    doc.setFillColor(254, 242, 242);
+    doc.roundedRect(ytBtnX, ytBtnY, ytBtnW, ytBtnH, 1, 1, 'F');
+    doc.setDrawColor(220, 38, 38);
+    doc.setLineWidth(0.25);
+    doc.roundedRect(ytBtnX, ytBtnY, ytBtnW, ytBtnH, 1, 1, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5.0);
+    doc.setTextColor(185, 28, 28);
+    doc.text('▶ OUVIR VÍDEO', ytBtnX + ytBtnW / 2, ytBtnY + 3.2, { align: 'center' });
+
+    // Clickable links for the button and the Hz label
+    doc.link(ytBtnX, ytBtnY, ytBtnW, ytBtnH, { url: ytUrl });
+    doc.link(margin + 6, rowY + 1.5, 24, 5.0, { url: ytUrl });
 
     // Title & purpose (Strictly split to 80mm so it never overflows into next column)
     doc.setFont('helvetica', 'bold');

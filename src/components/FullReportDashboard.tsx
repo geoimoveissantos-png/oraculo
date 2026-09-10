@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { NumerologyReport } from '../types';
+import { NumerologyReport, SoundFrequency } from '../types';
 import { generatePDF } from '../utils/pdfGenerator';
-import { calculateAuraProfile } from '../utils/numerology';
+import { calculateAuraProfile, getFrequencyYouTubeInfo } from '../utils/numerology';
 import { recordReportEmission, updateOrderContact } from '../utils/adminStorage';
 import { PdfVerificationModal } from './PdfVerificationModal';
 import { 
@@ -33,7 +33,10 @@ import {
   Radio,
   Camera,
   Sun,
-  Library
+  Library,
+  Play,
+  ExternalLink,
+  X
 } from 'lucide-react';
 import { getRecommendedBooksForReport, generateBookCoverDataUrl } from '../utils/bookRecommendations';
 
@@ -58,6 +61,7 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
       return false;
     }
   });
+  const [selectedFrequency, setSelectedFrequency] = useState<SoundFrequency | null>(null);
 
   const performDownload = () => {
     setIsDownloading(true);
@@ -990,6 +994,16 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
                     <div><strong>Quando ouvir:</strong> {sf.bestListeningTime}</div>
                     <div><strong>Modo:</strong> {sf.recommendation}</div>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFrequency(sf)}
+                    className="w-full mt-2.5 py-2 px-3 rounded-lg bg-red-950/40 hover:bg-red-900/60 border border-red-500/40 hover:border-red-400 text-red-200 text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm group"
+                  >
+                    <Play className="w-3.5 h-3.5 text-red-400 group-hover:scale-110 transition-transform fill-red-400" />
+                    <span>Ouvir {sf.hz} Hz no YouTube</span>
+                    <ExternalLink className="w-3 h-3 text-red-400/80 ml-auto" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -1373,6 +1387,155 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
         report={report}
         onConfirmSuccess={handleVerificationSuccess}
       />
+
+      {/* Modal de Vídeo da Frequência no YouTube com Fundo Embaçado */}
+      {selectedFrequency && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-fadeIn"
+          role="dialog"
+          aria-modal="true"
+        >
+          {/* Backdrop click to dismiss */}
+          <div 
+            className="absolute inset-0"
+            onClick={() => setSelectedFrequency(null)}
+          />
+          
+          <div className="relative z-10 w-full max-w-2xl bg-[#0f111f] border border-amber-500/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between gap-3 bg-[#14172a]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-500/40 flex items-center justify-center shrink-0">
+                  <Play className="w-5 h-5 text-red-400 fill-red-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-tech text-base sm:text-lg font-bold text-amber-300">
+                      {selectedFrequency.hz} Hz
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-purple-950/80 border border-purple-500/30 text-purple-300 font-semibold">
+                      {selectedFrequency.element}
+                    </span>
+                  </div>
+                  <h3 className="font-cinzel text-xs sm:text-sm font-bold text-white line-clamp-1">
+                    {selectedFrequency.title}
+                  </h3>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSelectedFrequency(null)}
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
+                title="Fechar"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body: Video Player & Frequency Guide */}
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+              {(() => {
+                const ytInfo = getFrequencyYouTubeInfo(selectedFrequency.hz);
+                const embedId = selectedFrequency.youtubeEmbedId || ytInfo.embedId;
+                const url = selectedFrequency.youtubeUrl || ytInfo.url;
+
+                return (
+                  <div className="space-y-3">
+                    {embedId ? (
+                      <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-slate-700 bg-black shadow-lg">
+                        <iframe
+                          src={`https://www.youtube.com/embed/${embedId}?autoplay=1&rel=0`}
+                          title={`Frequência ${selectedFrequency.hz} Hz - ${selectedFrequency.title}`}
+                          className="absolute inset-0 w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        />
+                      </div>
+                    ) : (
+                      <div className="p-6 rounded-xl bg-slate-900/80 border border-slate-700 text-center space-y-2">
+                        <Play className="w-8 h-8 text-amber-400 mx-auto" />
+                        <p className="text-xs text-slate-300">
+                          Acesse a transmissão oficial desta frequência no YouTube:
+                        </p>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-colors"
+                        >
+                          Assistir no YouTube
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+                    )}
+
+                    {/* Direct YouTube link bar */}
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-3 rounded-xl bg-[#15172b] border border-slate-800">
+                      <span className="text-xs text-slate-300 flex items-center gap-1.5">
+                        <Volume2 className="w-4 h-4 text-amber-400 shrink-0" />
+                        Recomendado ouvir com fones de ouvido estéreo
+                      </span>
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-red-300 hover:text-red-200 font-semibold flex items-center gap-1.5 hover:underline shrink-0"
+                      >
+                        <span>Abrir diretamente no YouTube</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Sacred Purpose & Practical Guidance */}
+              <div className="space-y-3 pt-1">
+                <div className="p-3.5 rounded-xl bg-[#121427] border border-slate-800/80 space-y-1">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">
+                    Propósito Sagrado de Ativação
+                  </span>
+                  <p className="text-xs text-slate-200 leading-relaxed">
+                    {selectedFrequency.sacredPurpose}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3 rounded-xl bg-[#121427] border border-slate-800">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
+                      Melhor Momento para Ouvir
+                    </span>
+                    <span className="text-slate-200 font-medium">
+                      {selectedFrequency.bestListeningTime}
+                    </span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-[#121427] border border-slate-800">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
+                      Recomendação de Aplicação
+                    </span>
+                    <span className="text-slate-200 font-medium">
+                      {selectedFrequency.recommendation}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3.5 sm:p-4 border-t border-slate-800 bg-[#14172a] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedFrequency(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Concluir / Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
