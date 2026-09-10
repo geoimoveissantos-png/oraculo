@@ -15,25 +15,33 @@ function getInitialSeedOrders(): AdminOrderRecord[] {
   const seed1 = generateNumerologyReport({
     fullName: 'Maria Clara dos Santos',
     birthDate: '1988-04-15',
-    birthTime: '08:30'
+    birthTime: '08:30',
+    email: 'mariaclara.santos@gmail.com',
+    phone: '(11) 99876-1234'
   });
 
   const seed2 = generateNumerologyReport({
     fullName: 'Lucas Eduardo Oliveira',
     birthDate: '1992-11-23',
-    birthTime: '14:20'
+    birthTime: '14:20',
+    email: 'lucas.oliveira@outlook.com',
+    phone: '(21) 98765-4321'
   });
 
   const seed3 = generateNumerologyReport({
     fullName: 'Beatriz Vasconcelos Ribeiro',
     birthDate: '1985-07-09',
-    birthTime: '19:45'
+    birthTime: '19:45',
+    email: 'beatriz.ribeiro@gmail.com',
+    phone: '(31) 99123-8877'
   });
 
   const seed4 = generateNumerologyReport({
     fullName: 'Rodrigo Augusto Mendes',
     birthDate: '1979-02-18',
-    birthTime: '11:15'
+    birthTime: '11:15',
+    email: 'rodrigo.mendes@uol.com.br',
+    phone: '(41) 98456-9900'
   });
 
   // Pre-set unlocks for seed records
@@ -45,6 +53,8 @@ function getInitialSeedOrders(): AdminOrderRecord[] {
       id: seed1.referralId,
       clientName: seed1.user.fullName,
       birthDate: seed1.user.formattedDate,
+      email: seed1.user.email,
+      phone: seed1.user.phone,
       pdfEmissionDate: '09/09/2026 às 11:32',
       paymentStatus: 'pago',
       amount: 27.90,
@@ -57,6 +67,8 @@ function getInitialSeedOrders(): AdminOrderRecord[] {
       id: seed2.referralId,
       clientName: seed2.user.fullName,
       birthDate: seed2.user.formattedDate,
+      email: seed2.user.email,
+      phone: seed2.user.phone,
       pdfEmissionDate: '09/09/2026 às 13:48',
       paymentStatus: 'pendente',
       amount: 27.90,
@@ -69,6 +81,8 @@ function getInitialSeedOrders(): AdminOrderRecord[] {
       id: seed3.referralId,
       clientName: seed3.user.fullName,
       birthDate: seed3.user.formattedDate,
+      email: seed3.user.email,
+      phone: seed3.user.phone,
       pdfEmissionDate: '09/09/2026 às 14:15',
       paymentStatus: 'pago',
       amount: 27.90,
@@ -81,6 +95,8 @@ function getInitialSeedOrders(): AdminOrderRecord[] {
       id: seed4.referralId,
       clientName: seed4.user.fullName,
       birthDate: seed4.user.formattedDate,
+      email: seed4.user.email,
+      phone: seed4.user.phone,
       pdfEmissionDate: '09/09/2026 às 15:10',
       paymentStatus: 'pendente',
       amount: 27.90,
@@ -91,6 +107,7 @@ function getInitialSeedOrders(): AdminOrderRecord[] {
     }
   ];
 }
+
 
 // Authentication Helpers
 export function getAdminCredentials() {
@@ -131,9 +148,9 @@ export function logoutAdmin(): void {
 export function getAdminOrders(): AdminOrderRecord[] {
   try {
     const raw = localStorage.getItem(ADMIN_ORDERS_KEY);
-    if (raw) {
+    if (raw !== null) {
       const parsed: AdminOrderRecord[] = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         return parsed;
       }
     }
@@ -141,7 +158,7 @@ export function getAdminOrders(): AdminOrderRecord[] {
     console.warn('Error reading admin orders from localStorage:', err);
   }
 
-  // If empty, initialize with seed
+  // If not yet initialized in localStorage, set initial seed orders
   const initial = getInitialSeedOrders();
   try {
     localStorage.setItem(ADMIN_ORDERS_KEY, JSON.stringify(initial));
@@ -195,6 +212,8 @@ export function recordReportEmission(
       ...existing,
       clientName: report.user.fullName,
       birthDate: report.user.formattedDate,
+      email: report.user.email || existing.email,
+      phone: report.user.phone || existing.phone,
       pdfEmissionDate: existing.pdfEmissionDate || emissionDateStr,
       paymentStatus: finalStatus,
       report,
@@ -206,6 +225,8 @@ export function recordReportEmission(
       id: report.referralId,
       clientName: report.user.fullName,
       birthDate: report.user.formattedDate,
+      email: report.user.email,
+      phone: report.user.phone,
       pdfEmissionDate: emissionDateStr,
       paymentStatus: status,
       amount: 27.90,
@@ -216,6 +237,7 @@ export function recordReportEmission(
     };
     orders.unshift(updatedRecord);
   }
+
 
   // Update client unlock state accordingly
   if (updatedRecord.paymentStatus === 'pago') {
@@ -247,6 +269,23 @@ export function updatePaymentStatus(orderId: string, newStatus: PaymentStatus): 
       localStorage.setItem(`unlocked_${orderId}`, 'false');
     }
 
+    saveAdminOrders(orders);
+  }
+}
+
+// Update client contact (E-mail and/or WhatsApp) after Pix confirmation when downloading PDF
+export function updateOrderContact(orderId: string, email?: string, phone?: string): void {
+  const orders = getAdminOrders();
+  const target = orders.find(o => o.id === orderId);
+
+  if (target) {
+    if (email && email.trim()) target.email = email.trim();
+    if (phone && phone.trim()) target.phone = phone.trim();
+    if (target.report && target.report.user) {
+      if (email && email.trim()) target.report.user.email = email.trim();
+      if (phone && phone.trim()) target.report.user.phone = phone.trim();
+    }
+    target.updatedAt = new Date().toISOString();
     saveAdminOrders(orders);
   }
 }

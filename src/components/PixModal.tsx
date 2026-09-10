@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PIX_KEY, PIX_RECIPIENT_NAME, PIX_PRICE, generatePixPayload, generatePixQRCodeDataURL } from '../utils/pix';
+import { PIX_KEY, PIX_RECIPIENT_NAME, PIX_PRICE, OFFICIAL_PIX_PAYLOAD, generatePixQRCodeDataURL } from '../utils/pix';
 import { X, Copy, Check, QrCode, ShieldCheck, Sparkles, Loader2, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -16,7 +16,7 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose, onSuccess, 
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [isVerifying, setIsVerifying] = useState(false);
 
-  const pixPayload = generatePixPayload(PIX_KEY, PIX_RECIPIENT_NAME, 'SAO PAULO', PIX_PRICE, 'NUMERO15');
+  const pixPayload = OFFICIAL_PIX_PAYLOAD;
 
   useEffect(() => {
     if (isOpen) {
@@ -131,7 +131,7 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose, onSuccess, 
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-slate-300 flex items-center gap-1.5">
-                Chave Pix (Telefone / Celular):
+                Chave Pix (Chave Aleatória):
               </span>
               <span className="text-slate-400 text-[11px]">Favorecido: {PIX_RECIPIENT_NAME}</span>
             </div>
@@ -160,25 +160,33 @@ export const PixModal: React.FC<PixModalProps> = ({ isOpen, onClose, onSuccess, 
             </div>
           </div>
 
-          {/* Copia e Cola Code */}
+          {/* Copia e Cola Code / Endereço Pix */}
           <div className="space-y-2">
-            <span className="block text-xs font-semibold text-slate-300">
-              Ou copie o código Pix Copia e Cola completo:
-            </span>
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-slate-300">
+                Código Pix Copia e Cola / Endereço do Pix:
+              </span>
+              <span className="text-emerald-400 text-[11px] font-mono">Valor: R$ 15,00</span>
+            </div>
+
+            <div className="p-2.5 bg-[#0b0c16] border border-slate-700/80 rounded-xl font-mono text-[10px] text-slate-400 break-all select-all max-h-16 overflow-y-auto">
+              {pixPayload}
+            </div>
+
             <button
               id="btn-copy-copia-cola"
               onClick={handleCopyPayload}
-              className="w-full py-2.5 px-3 rounded-xl bg-[#0b0c16] hover:bg-slate-800/80 border border-slate-700 text-xs text-slate-300 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-[#0b0c16] font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-amber-500/20"
             >
               {copiedPayload ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="text-emerald-300 font-semibold">Código Pix Copiado com Sucesso!</span>
+                  <Check className="w-4 h-4 text-emerald-950 stroke-[3]" />
+                  <span className="text-emerald-950 font-extrabold">Código / Endereço Pix Copiado com Sucesso!</span>
                 </>
               ) : (
                 <>
-                  <QrCode className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Copiar Código Pix Copia e Cola</span>
+                  <QrCode className="w-4 h-4 text-[#0b0c16]" />
+                  <span>Copiar Código / Endereço Pix Copia e Cola</span>
                 </>
               )}
             </button>

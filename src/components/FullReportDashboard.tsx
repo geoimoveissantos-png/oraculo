@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { NumerologyReport } from '../types';
 import { generatePDF } from '../utils/pdfGenerator';
 import { calculateAuraProfile } from '../utils/numerology';
-import { recordReportEmission } from '../utils/adminStorage';
+import { recordReportEmission, updateOrderContact } from '../utils/adminStorage';
+import { PdfVerificationModal } from './PdfVerificationModal';
 import { 
   Download, 
   Share2, 
@@ -31,8 +32,10 @@ import {
   Star,
   Radio,
   Camera,
-  Sun
+  Sun,
+  Library
 } from 'lucide-react';
+import { getRecommendedBooksForReport, generateBookCoverDataUrl } from '../utils/bookRecommendations';
 
 interface FullReportDashboardProps {
   report: NumerologyReport;
@@ -45,10 +48,18 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
   onOpenShare,
   onNewCalculation,
 }) => {
-  const [activeTab, setActiveTab] = useState<'essence' | 'prosperity' | 'name_opt' | 'baths_sound' | 'sacred_symbols' | 'career' | 'year'>('essence');
+  const [activeTab, setActiveTab] = useState<'essence' | 'prosperity' | 'name_opt' | 'baths_sound' | 'sacred_symbols' | 'career' | 'year' | 'books'>('essence');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [isPdfVerified, setIsPdfVerified] = useState(() => {
+    try {
+      return localStorage.getItem(`pdf_verified_${report.referralId}`) === 'true';
+    } catch {
+      return false;
+    }
+  });
 
-  const handleDownloadPDF = () => {
+  const performDownload = () => {
     setIsDownloading(true);
     try {
       generatePDF(report);
@@ -59,6 +70,28 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
       setTimeout(() => setIsDownloading(false), 1000);
     }
   };
+
+  const handleDownloadPDF = () => {
+    // Only ask for email or whatsapp confirmation after Pix confirmation when downloading the PDF
+    if (!isPdfVerified) {
+      setIsVerificationModalOpen(true);
+      return;
+    }
+    performDownload();
+  };
+
+  const handleVerificationSuccess = (contact: { email?: string; phone?: string }) => {
+    if (contact.email) {
+      report.user.email = contact.email;
+    }
+    if (contact.phone) {
+      report.user.phone = contact.phone;
+    }
+    updateOrderContact(report.referralId, contact.email, contact.phone);
+    setIsPdfVerified(true);
+    performDownload();
+  };
+
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-fadeIn">
@@ -271,6 +304,18 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
         >
           <Calendar className="w-4 h-4" />
           <span>7. Ano Pessoal</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('books')}
+          className={`py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+            activeTab === 'books'
+              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+          }`}
+        >
+          <Library className="w-4 h-4 text-amber-400" />
+          <span>8. Leituras Inspiradoras</span>
         </button>
       </div>
 
@@ -1163,6 +1208,133 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
         </div>
       )}
 
+      {/* TAB CONTENT 8: LEITURAS INSPIRADORAS */}
+      {activeTab === 'books' && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Main Hero Card for Books */}
+          <div className="p-6 sm:p-8 rounded-2xl bg-[#131526] border border-amber-500/40 relative overflow-hidden">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-amber-500/20 pb-4 mb-6">
+              <div>
+                <span className="text-xs uppercase font-bold tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <Library className="w-4 h-4 text-amber-400" />
+                  Alquimia Mental & Sabedoria de Riqueza
+                </span>
+                <h3 className="font-cinzel text-xl sm:text-2xl font-bold text-white mt-1">
+                  Guia de Leitura Inspiradora & Mestria Pessoal
+                </h3>
+              </div>
+              <div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+                Sintonizado com Caminho {report.lifePath.number}
+              </div>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-3xl mb-6">
+              A numerologia identifica a matriz vibracional e os potenciais latentes da sua alma. No entanto, para que essa energia se converta em riqueza tangível, saúde psíquica e liderança no mundo material, sua mente precisa de modelos mentais comprovados. Selecionamos com rigor obras transformadoras que aceleram o desbloqueio do seu potencial:
+            </p>
+
+            {/* List of Recommended Books */}
+            <div className="space-y-6">
+              {getRecommendedBooksForReport(report).map((book, idx) => {
+                const coverDataUrl = generateBookCoverDataUrl(book, 220, 330);
+                return (
+                  <div
+                    key={book.id}
+                    className="p-5 sm:p-6 rounded-2xl bg-[#0d0e1b] border border-amber-500/30 hover:border-amber-500/60 transition-all flex flex-col md:flex-row gap-6 items-start"
+                  >
+                    {/* Left: Book Cover Visual */}
+                    <div className="flex-shrink-0 mx-auto md:mx-0 flex flex-col items-center">
+                      <div className="relative group">
+                        {coverDataUrl ? (
+                          <img
+                            src={coverDataUrl}
+                            alt={book.title}
+                            referrerPolicy="no-referrer"
+                            className="w-32 sm:w-36 h-auto rounded-lg shadow-xl shadow-black/60 border border-amber-500/30 group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-32 sm:w-36 h-48 rounded-lg bg-slate-900 border border-amber-500/40 flex flex-col items-center justify-center p-3 text-center">
+                            <BookOpen className="w-8 h-8 text-amber-400 mb-2" />
+                            <span className="text-[11px] font-bold text-white">{book.title}</span>
+                            <span className="text-[9px] text-amber-300 mt-1">{book.author}</span>
+                          </div>
+                        )}
+                      </div>
+                      <span className="mt-2.5 text-[10px] font-bold text-amber-400 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded text-center max-w-[150px]">
+                        {book.bestsellerBadge}
+                      </span>
+                    </div>
+
+                    {/* Right: Detailed Description & Advice */}
+                    <div className="flex-1 space-y-3.5">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400">
+                            Recomendação #{idx + 1}
+                          </span>
+                          <h4 className="font-cinzel text-lg sm:text-xl font-bold text-white">
+                            {book.title}
+                          </h4>
+                          <p className="text-xs text-slate-400">
+                            Por <span className="text-slate-200 font-semibold">{book.author}</span>
+                          </p>
+                        </div>
+                        <span className="text-[11px] font-semibold px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300">
+                          {book.category}
+                        </span>
+                      </div>
+
+                      {/* Why it helps */}
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          Como esta leitura ajudará o consulente:
+                        </span>
+                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                          {book.whyItHelps}
+                        </p>
+                      </div>
+
+                      {/* Synergy with numerology */}
+                      <div className="space-y-1 bg-[#15172b] p-3 rounded-xl border border-slate-800">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                          Sinergia com seu Caminho de Vida {report.lifePath.number}:
+                        </span>
+                        <p className="text-xs text-slate-300 leading-relaxed">
+                          {book.synergyReason}
+                        </p>
+                      </div>
+
+                      {/* Practical key */}
+                      <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-1">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5 text-amber-400" />
+                          Chave de Aplicação Prática Imediata:
+                        </span>
+                        <p className="text-xs text-amber-100 font-medium leading-relaxed italic">
+                          "{book.practicalKey}"
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Daily study ritual banner */}
+            <div className="mt-8 p-5 rounded-2xl bg-gradient-to-r from-[#1b1e38] to-[#121426] border border-amber-500/40 space-y-2">
+              <h4 className="font-cinzel text-sm sm:text-base font-bold text-amber-300 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-400" />
+                Ritual de Fixação Psíquica & Leitura Diária
+              </h4>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Dedique de 15 a 20 minutos todos os dias a uma destas obras, de preferência nas primeiras horas da manhã ou antes do repouso noturno. Nesses períodos de transição de ondas cerebrais (Alfa e Theta), os conceitos de abundância e liderança penetram sem resistência no subconsciente, reprogramando a autoimagem e consolidando seus números de poder.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Sticky Action Bar */}
       <div className="p-6 rounded-2xl bg-[#0c0d19]/90 backdrop-blur-md border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
@@ -1170,7 +1342,7 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
             Seu Relatório Completo está Pronto para Impressão
           </h4>
           <p className="text-xs text-slate-400">
-            Exportação em 6 páginas diagramadas em formato A4 com selos sagrados, banhos, frequências sonoras e promessas bíblicas.
+            Exportação em 8 páginas diagramadas em formato A4 com diagnóstico, selos sagrados, banhos, frequências sonoras, promessas bíblicas e guia de leitura inspiradora.
           </p>
         </div>
 
@@ -1182,7 +1354,7 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
             className="flex-1 sm:flex-initial py-3 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-[#0b0c16] font-bold text-xs sm:text-sm tracking-wide transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
-            <span>{isDownloading ? 'Baixando...' : 'Baixar PDF Oficial (6 Páginas A4)'}</span>
+            <span>{isDownloading ? 'Baixando...' : 'Baixar PDF Oficial (8 Páginas A4)'}</span>
           </button>
 
           <button
@@ -1193,6 +1365,15 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Security Verification Modal for PDF Download */}
+      <PdfVerificationModal
+        isOpen={isVerificationModalOpen}
+        onClose={() => setIsVerificationModalOpen(false)}
+        report={report}
+        onConfirmSuccess={handleVerificationSuccess}
+      />
     </div>
   );
 };
+

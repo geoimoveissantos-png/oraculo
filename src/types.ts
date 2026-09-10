@@ -2,7 +2,10 @@ export interface UserInputs {
   fullName: string;
   birthDate: string; // YYYY-MM-DD
   birthTime?: string; // HH:mm
+  email?: string;
+  phone?: string; // WhatsApp com DDD
 }
+
 
 export interface NumberBreakdown {
   number: number;
@@ -111,6 +114,8 @@ export interface NumerologyReport {
     birthDate: string;
     birthTime?: string;
     formattedDate: string;
+    email?: string;
+    phone?: string;
   };
   generatedAt: string;
   referralId: string;
@@ -135,6 +140,8 @@ export interface AdminOrderRecord {
   id: string; // unique referralId or record ID
   clientName: string;
   birthDate: string;
+  email?: string;
+  phone?: string;
   pdfEmissionDate: string; // Date and time when the PDF was emitted/requested
   paymentStatus: PaymentStatus;
   amount: number;
@@ -143,3 +150,4 @@ export interface AdminOrderRecord {
   createdAt: string;
   updatedAt: string;
 }
+

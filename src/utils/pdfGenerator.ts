@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import { NumerologyReport } from '../types';
 import { calculateAuraProfile } from './numerology';
+import { getRecommendedBooksForReport, generateBookCoverDataUrl } from './bookRecommendations';
 
 export function generatePDF(report: NumerologyReport) {
   // A4 dimensions in mm: 210 x 297
@@ -14,7 +15,7 @@ export function generatePDF(report: NumerologyReport) {
   const pageHeight = 297;
   const margin = 16;
   const contentWidth = pageWidth - margin * 2; // 178 mm
-  const totalPages = 7;
+  const totalPages = 8;
 
   // Color Palette
   const PRIMARY = '#1A1B2F';
@@ -26,6 +27,7 @@ export function generatePDF(report: NumerologyReport) {
   const BORDER_COLOR = '#E2E8F0';
 
   const referralUrl = `https://seudominio.com/?ref=${report.referralId}`;
+  const PIX_NUBANK_URL = 'https://nubank.com.br/cobrar/dx851l/6aa2c5cb-60b9-4de0-aac4-53324bc8ec8d';
 
   // Helper: Draw Header (Pages 2 to 6)
   const drawPageHeader = (pageNum: number, sectionTitle: string) => {
@@ -58,23 +60,45 @@ export function generatePDF(report: NumerologyReport) {
     doc.line(margin, 19, pageWidth - margin, 19);
   };
 
-  // Helper: Draw Footer (Pages 2 to 6)
+  // Helper: Draw Footer (Pages 2 to 7)
   const drawPageFooter = (pageNum: number) => {
+    // Divider line
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.3);
-    doc.line(margin, pageHeight - 13, pageWidth - margin, pageHeight - 13);
+    doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
 
-    // Referral link
+    // Pix reminder notice requested by user
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.2);
+    doc.setFontSize(6.8);
     doc.setTextColor(TEXT_MUTED);
-    doc.text(`Link de Indicação & Ativação: ${referralUrl}`, margin, pageHeight - 8.5);
+    const pixPrefix = 'Se você se esqueceu de efetuar o pagamento pode fazer o pix através do link a seguir: ';
+    doc.text(pixPrefix, margin, pageHeight - 10.5);
+
+    const prefixWidth = doc.getTextWidth(pixPrefix);
+    const linkText = 'FAZER PIX AGORA';
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.0);
+    doc.setTextColor(130, 10, 209); // Nubank purple #820AD1
+    doc.textWithLink(linkText, margin + prefixWidth, pageHeight - 10.5, { url: PIX_NUBANK_URL });
+
+    const linkWidth = doc.getTextWidth(linkText);
+    doc.setDrawColor(130, 10, 209);
+    doc.setLineWidth(0.3);
+    doc.line(margin + prefixWidth, pageHeight - 9.8, margin + prefixWidth + linkWidth, pageHeight - 9.8);
+    doc.link(margin + prefixWidth - 1, pageHeight - 13.5, linkWidth + 2, 4.5, { url: PIX_NUBANK_URL });
+
+    // Sub-row: Referral link and page number
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(TEXT_MUTED);
+    doc.text(`Link de Indicação & Ativação: ${referralUrl}`, margin, pageHeight - 5.5);
 
     // Page number
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
+    doc.setFontSize(7.0);
     doc.setTextColor(PRIMARY);
-    doc.text(`Página ${pageNum} de ${totalPages}`, pageWidth - margin, pageHeight - 8.5, { align: 'right' });
+    doc.text(`Página ${pageNum} de ${totalPages}`, pageWidth - margin, pageHeight - 5.5, { align: 'right' });
   };
 
   // Helper: Card background
@@ -339,13 +363,40 @@ export function generatePDF(report: NumerologyReport) {
   doc.setFontSize(7.0);
   doc.setTextColor(230, 235, 245);
   doc.text('• Campo Biofotônico da Aura & Blindagem • Otimização do Nome para a Vibração 8', centerX, coverTeaserY + 13, { align: 'center' });
-  doc.text('• Banhos Sagrados de Limpeza • Frequências Solfeggio • Selos & Bênçãos Bíblicas', centerX, coverTeaserY + 19, { align: 'center' });
+  doc.text('• Banhos Sagrados • Frequências Solfeggio • Selos Sagrados • Livros Inspiradores', centerX, coverTeaserY + 19, { align: 'center' });
 
   // Cover footer notice
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.2);
+  doc.setFontSize(6.8);
   doc.setTextColor(170, 175, 195);
   doc.text('Relatório emitido sob o rigor do Sistema Pitagórico, Cabala da Prosperidade e Princípios Bíblicos de Fartura.', centerX, pageHeight - 16, { align: 'center' });
+
+  // Pix reminder on cover footer
+  const coverPixPrefix = 'Se você se esqueceu de efetuar o pagamento pode fazer o pix através do link a seguir: ';
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(190, 195, 215);
+  const coverPrefixW = doc.getTextWidth(coverPixPrefix);
+  const coverLinkTxt = 'FAZER PIX AGORA';
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.8);
+  const coverLinkW = doc.getTextWidth(coverLinkTxt);
+  const coverTotalW = coverPrefixW + coverLinkW;
+  const coverStartX = centerX - coverTotalW / 2;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(190, 195, 215);
+  doc.text(coverPixPrefix, coverStartX, pageHeight - 10.5);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.8);
+  doc.setTextColor(ACCENT_GOLD_LIGHT);
+  doc.textWithLink(coverLinkTxt, coverStartX + coverPrefixW, pageHeight - 10.5, { url: PIX_NUBANK_URL });
+  doc.setDrawColor(243, 229, 171);
+  doc.setLineWidth(0.3);
+  doc.line(coverStartX + coverPrefixW, pageHeight - 9.8, coverStartX + coverPrefixW + coverLinkW, pageHeight - 9.8);
+  doc.link(coverStartX + coverPrefixW - 1, pageHeight - 13.5, coverLinkW + 2, 4.5, { url: PIX_NUBANK_URL });
 
   // ==========================================
   // PAGE 2: CAMINHO DE VIDA E PERSONALIDADE
@@ -1429,8 +1480,8 @@ export function generatePDF(report: NumerologyReport) {
   doc.text(`Dias Favoráveis: ${report.personalYear.luckyDays.join(', ')}   •   Horas de Poder: ${report.personalYear.powerHours}`, margin + 8, concY + 41.5);
 
   // Pacto de Consagração & Assinatura do Titular
-  const pactY = 240;
-  const pactH = 38;
+  const pactY = 239;
+  const pactH = 34;
   doc.setFillColor(PRIMARY);
   doc.roundedRect(margin, pactY, contentWidth, pactH, 2.5, 2.5, 'F');
 
@@ -1442,10 +1493,10 @@ export function generatePDF(report: NumerologyReport) {
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(6.5);
   doc.setTextColor(240, 245, 255);
-  doc.text('"Eu me comprometo a exercer meus talentos com excelência, honrar a Providência Divina e aceitar a fartura sem escassez."', centerX, pactY + 12.5, { align: 'center' });
+  doc.text('"Eu me comprometo a exercer meus talentos com excelência, honrar a Providência Divina e aceitar a fartura sem escassez."', centerX, pactY + 12.0, { align: 'center' });
 
   // Signature Lines
-  const sLineY = pactY + 25;
+  const sLineY = pactY + 23;
   doc.setDrawColor(ACCENT_GOLD);
   doc.setLineWidth(0.4);
   doc.line(margin + 12, sLineY, margin + 78, sLineY);
@@ -1457,7 +1508,195 @@ export function generatePDF(report: NumerologyReport) {
   doc.text(report.nameOptimization.suggestedName, margin + 45, sLineY + 4.5, { align: 'center' });
   doc.text('Selo Oficial Pitagórico & Bênção Bíblica', pageWidth - margin - 45, sLineY + 4.5, { align: 'center' });
 
-  // Save the complete 6-page document
+  // ==========================================
+  // PAGE 8: GUIA DE LEITURA INSPIRADORA & MESTRIA MENTAL
+  // ==========================================
+  doc.addPage();
+  drawPageHeader(8, '7. Recomendações de Leitura & Mestria Mental');
+  drawPageFooter(8);
+
+  // Intro Header Banner
+  const introY = 22;
+  const introH = 20;
+  doc.setFillColor(PRIMARY);
+  doc.roundedRect(margin, introY, contentWidth, introH, 2.5, 2.5, 'F');
+  doc.setDrawColor(ACCENT_GOLD);
+  doc.setLineWidth(0.35);
+  doc.roundedRect(margin, introY, contentWidth, introH, 2.5, 2.5, 'S');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.2);
+  doc.setTextColor(ACCENT_GOLD);
+  doc.text('BIBLIOTECA DA MESTRIA • LIVROS ESSENCIAIS RECOMENDADOS PARA O SEU MAPA', centerX, introY + 6.2, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.8);
+  doc.setTextColor(240, 245, 255);
+  const introTxt = `A numerologia mapeia a frequência de sua alma; a leitura estratégica equipa sua mente consciente com os modelos práticos de realização. Selecionamos com rigor 3 obras fundamentais de alta voltagem intelectual e espiritual, personalizadas para harmonizar com o seu Caminho de Vida ${report.lifePath.number} e alavancar sua prosperidade:`;
+  const splitIntro = doc.splitTextToSize(introTxt, contentWidth - 12);
+  doc.text(splitIntro, centerX, introY + 11.2, { align: 'center' });
+
+  // Recommended books tailored to this report
+  const recommendedBooks = getRecommendedBooksForReport(report);
+  const booksStartY = 45;
+  const bookCardH = 64;
+  const bookCardSpacing = 3.5;
+
+  recommendedBooks.forEach((book, index) => {
+    const cardY = booksStartY + index * (bookCardH + bookCardSpacing);
+    drawCard(margin, cardY, contentWidth, bookCardH);
+
+    // Left: Visual Book Cover Image
+    const coverX = margin + 4.5;
+    const coverY = cardY + 4.5;
+    const coverW = 27;
+    const coverH = 41;
+
+    // Generate crisp 300-DPI cover data URL
+    let coverLoaded = false;
+    try {
+      const coverDataUrl = generateBookCoverDataUrl(book, 220, 330);
+      if (coverDataUrl) {
+        doc.addImage(coverDataUrl, 'PNG', coverX, coverY, coverW, coverH);
+        coverLoaded = true;
+      }
+    } catch (e) {
+      console.warn('Could not render cover image in PDF:', e);
+    }
+
+    if (!coverLoaded) {
+      // Fallback vector book frame
+      doc.setFillColor(30, 35, 60);
+      doc.roundedRect(coverX, coverY, coverW, coverH, 1.5, 1.5, 'F');
+      doc.setDrawColor(ACCENT_GOLD);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(coverX, coverY, coverW, coverH, 1.5, 1.5, 'S');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6);
+      doc.setTextColor(ACCENT_GOLD);
+      doc.text(book.author.toUpperCase(), coverX + coverW / 2, coverY + 10, { align: 'center' });
+
+      doc.setFontSize(7.5);
+      doc.setTextColor(255, 255, 255);
+      const splitTitleFallback = doc.splitTextToSize(book.title.toUpperCase(), coverW - 4);
+      doc.text(splitTitleFallback, coverX + coverW / 2, coverY + 22, { align: 'center' });
+    }
+
+    // Cover border & 3D shadow frame
+    doc.setDrawColor(212, 175, 55);
+    doc.setLineWidth(0.35);
+    doc.roundedRect(coverX, coverY, coverW, coverH, 1, 1, 'S');
+
+    // Bestseller badge below book cover
+    const badgeY = cardY + 47.5;
+    doc.setFillColor(PRIMARY);
+    doc.roundedRect(coverX, badgeY, coverW, 12, 1.5, 1.5, 'F');
+    doc.setDrawColor(ACCENT_GOLD);
+    doc.setLineWidth(0.25);
+    doc.roundedRect(coverX, badgeY, coverW, 12, 1.5, 1.5, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5.2);
+    doc.setTextColor(ACCENT_GOLD);
+    const splitBadge = doc.splitTextToSize(book.bestsellerBadge, coverW - 2);
+    doc.text(splitBadge, coverX + coverW / 2, badgeY + 4.5, { align: 'center' });
+
+    // Right: Book Information & Analysis
+    const textStartX = margin + 35.5;
+    const textWidth = contentWidth - 40; // ~138 mm
+
+    // Row 1: Title & Category Pill
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(PRIMARY);
+    doc.text(book.title, textStartX, cardY + 8);
+
+    // Category badge pill on the right
+    const pillW = 46;
+    const pillH = 5.5;
+    const pillX = margin + contentWidth - pillW - 4;
+    const pillY = cardY + 4;
+    doc.setFillColor(243, 229, 171);
+    doc.roundedRect(pillX, pillY, pillW, pillH, 1.2, 1.2, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5.8);
+    doc.setTextColor(140, 95, 10);
+    doc.text(book.category, pillX + pillW / 2, pillY + 3.8, { align: 'center' });
+
+    // Row 2: Author & Synergy Subheader
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.2);
+    doc.setTextColor(ACCENT_GOLD);
+    doc.text(`Autor: ${book.author}   •   Sintonizado com: Caminho de Vida ${report.lifePath.number}`, textStartX, cardY + 13.5);
+
+    // Row 3: Como esta leitura ajudará o consulente
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.8);
+    doc.setTextColor(PRIMARY);
+    doc.text('COMO ESTA OBRA POTENCIALIZARÁ O SEU SUCESSO:', textStartX, cardY + 19);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.6);
+    doc.setTextColor(TEXT_DARK);
+    const whyLines = doc.splitTextToSize(book.whyItHelps, textWidth);
+    doc.text(whyLines, textStartX, cardY + 23.5);
+
+    // Row 4: Sinergia Numerológica & Análise do Caso
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.5);
+    doc.setTextColor(150, 100, 15);
+    doc.text('Análise Vibracional:', textStartX, cardY + 35);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.4);
+    doc.setTextColor(TEXT_DARK);
+    const synergyLines = doc.splitTextToSize(book.synergyReason, textWidth - 28);
+    doc.text(synergyLines, textStartX + 26, cardY + 35);
+
+    // Row 5: Chave Prática Imediata (Gold/Alchemical Box)
+    const keyBoxY = cardY + 44.5;
+    const keyBoxH = 15;
+    doc.setFillColor(254, 252, 243);
+    doc.roundedRect(textStartX, keyBoxY, textWidth, keyBoxH, 1.5, 1.5, 'F');
+    doc.setDrawColor(243, 229, 171);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(textStartX, keyBoxY, textWidth, keyBoxH, 1.5, 1.5, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.3);
+    doc.setTextColor(160, 110, 10);
+    doc.text('⚡ CHAVE DE APLICAÇÃO PRÁTICA IMEDIATA:', textStartX + 3, keyBoxY + 4.5);
+
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(6.2);
+    doc.setTextColor(TEXT_DARK);
+    const keyLines = doc.splitTextToSize(book.practicalKey, textWidth - 6);
+    doc.text(keyLines, textStartX + 3, keyBoxY + 8.8);
+  });
+
+  // Bottom Ritual Banner
+  const ritualY = 248;
+  const ritualH = 26;
+  doc.setFillColor(PRIMARY);
+  doc.roundedRect(margin, ritualY, contentWidth, ritualH, 2.5, 2.5, 'F');
+  doc.setDrawColor(ACCENT_GOLD);
+  doc.setLineWidth(0.35);
+  doc.roundedRect(margin, ritualY, contentWidth, ritualH, 2.5, 2.5, 'S');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.8);
+  doc.setTextColor(ACCENT_GOLD);
+  doc.text('RITUAL DE LEITURA TRANSFORMADORA & FIXAÇÃO DA PROSPERIDADE', centerX, ritualY + 6.5, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.6);
+  doc.setTextColor(240, 245, 255);
+  const ritualTxt = "Reserve de 15 a 20 minutos ininterruptos todos os dias para se nutrir destas páginas, preferencialmente logo ao acordar ou minutos antes de dormir. Nestes momentos, suas ondas cerebrais operam em frequências Alfa/Theta, permitindo que os arquétipos de sabedoria e as leis de prosperidade penetrem direto no seu subconsciente, expulsando crenças de escassez e acelerando suas realizações.";
+  const splitRitual = doc.splitTextToSize(ritualTxt, contentWidth - 14);
+  doc.text(splitRitual, centerX, ritualY + 12.5, { align: 'center' });
+
+  // Save the complete document
   const fileName = `Mapa-Numerologico-${report.user.fullName.replace(/\s+/g, '-')}-Completo.pdf`;
   doc.save(fileName);
 }

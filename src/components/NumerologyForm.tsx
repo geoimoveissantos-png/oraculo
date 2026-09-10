@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { UserInputs } from '../types';
-import { Sparkles, Calendar, Clock, User, ArrowRight, Wand2 } from 'lucide-react';
+import { Sparkles, Calendar, Clock, User, Mail, Phone, ArrowRight, Wand2 } from 'lucide-react';
 
 interface NumerologyFormProps {
   onSubmit: (inputs: UserInputs) => void;
@@ -11,7 +11,24 @@ export const NumerologyForm: React.FC<NumerologyFormProps> = ({ onSubmit, isLoad
   const [fullName, setFullName] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [birthTime, setBirthTime] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // Format WhatsApp with DDD as user types: (11) 98765-4321
+  const formatPhone = (val: string) => {
+    const digits = val.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 2) {
+      return digits ? `(${digits}` : '';
+    }
+    if (digits.length <= 6) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    }
+    if (digits.length <= 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,10 +45,30 @@ export const NumerologyForm: React.FC<NumerologyFormProps> = ({ onSubmit, isLoad
       return;
     }
 
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError('Por favor, informe seu e-mail para receber a prévia e confirmações.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setError('Por favor, informe um endereço de e-mail válido (ex: seu.nome@email.com).');
+      return;
+    }
+
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (!phoneDigits || phoneDigits.length < 10) {
+      setError('Por favor, informe seu WhatsApp com DDD (ex: (11) 98765-4321).');
+      return;
+    }
+
     onSubmit({
       fullName: trimmedName,
       birthDate,
       birthTime: birthTime || undefined,
+      email: trimmedEmail,
+      phone: phone.trim(),
     });
   };
 
@@ -39,6 +76,8 @@ export const NumerologyForm: React.FC<NumerologyFormProps> = ({ onSubmit, isLoad
     setFullName('Helena Beatriz dos Santos');
     setBirthDate('1992-07-15');
     setBirthTime('14:30');
+    setEmail('helena.santos@email.com');
+    setPhone('(11) 98765-4321');
     setError(null);
   };
 
@@ -147,6 +186,58 @@ export const NumerologyForm: React.FC<NumerologyFormProps> = ({ onSubmit, isLoad
             </div>
           </div>
 
+          {/* Email & WhatsApp Inputs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Email */}
+            <div className="space-y-1.5">
+              <label htmlFor="input-email" className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                Seu E-mail <span className="text-amber-400">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <Mail className="w-4 h-4 text-amber-400/80" />
+                </div>
+                <input
+                  id="input-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="exemplo@email.com"
+                  className="w-full pl-10 pr-4 py-3 bg-[#0d0e1c] border border-slate-700/80 focus:border-amber-400/80 focus:ring-1 focus:ring-amber-400/40 rounded-xl text-white placeholder-slate-500 text-sm transition-all outline-none"
+                  required
+                />
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Para identificação do seu mapa e liberação segura do PDF.
+              </p>
+            </div>
+
+            {/* WhatsApp */}
+            <div className="space-y-1.5">
+              <label htmlFor="input-phone" className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
+                WhatsApp com DDD <span className="text-amber-400">*</span>
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <Phone className="w-4 h-4 text-emerald-400/80" />
+                </div>
+                <input
+                  id="input-phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(formatPhone(e.target.value))}
+                  placeholder="(11) 98765-4321"
+                  maxLength={15}
+                  className="w-full pl-10 pr-4 py-3 bg-[#0d0e1c] border border-slate-700/80 focus:border-emerald-400/80 focus:ring-1 focus:ring-emerald-400/40 rounded-xl text-white placeholder-slate-500 text-sm transition-all outline-none"
+                  required
+                />
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Para confirmação e liberação do relatório completo.
+              </p>
+            </div>
+          </div>
+
           {/* Action Buttons */}
           <div className="pt-3 space-y-3">
             <button
@@ -195,3 +286,4 @@ export const NumerologyForm: React.FC<NumerologyFormProps> = ({ onSubmit, isLoad
     </div>
   );
 };
+

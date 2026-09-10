@@ -265,12 +265,12 @@ export const FreePreviewCard: React.FC<FreePreviewCardProps> = ({
           <h3 className="font-cinzel text-2xl sm:text-3xl font-extrabold text-white">
             Desbloqueie Seu Mapa Completo & <br />
             <span className="bg-gradient-to-r from-amber-200 via-amber-400 to-amber-200 bg-clip-text text-transparent">
-              Baixe o Relatório Completo em PDF (6 Páginas A4)
+              Baixe o Relatório Completo em PDF (8 Páginas A4)
             </span>
           </h3>
 
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl mx-auto">
-            Descubra todos os números ocultos, a <strong>otimização do seu nome para o Número 8</strong>, manual da assinatura de poder, <strong>banhos energéticos ancestrais</strong>, frequências de Solfeggio, selos sagrados e <strong>promessas bíblicas de fartura</strong>.
+            Descubra todos os números ocultos, a <strong>otimização do seu nome para o Número 8</strong>, manual da assinatura de poder, <strong>banhos energéticos ancestrais</strong>, frequências de Solfeggio, selos sagrados, <strong>promessas bíblicas de fartura</strong> e o <strong>guia exclusivo de leituras inspiradoras</strong>.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-300 py-2">

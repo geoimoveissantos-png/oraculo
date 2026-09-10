@@ -21,7 +21,9 @@ import {
   Sparkles, 
   ArrowUpDown,
   X,
-  AlertCircle
+  AlertCircle,
+  Mail,
+  Phone
 } from 'lucide-react';
 import { AdminOrderRecord, PaymentStatus, NumerologyReport } from '../types';
 import { 
@@ -66,7 +68,12 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newClientBirthDate, setNewClientBirthDate] = useState('');
+  const [newClientEmail, setNewClientEmail] = useState('');
+  const [newClientPhone, setNewClientPhone] = useState('');
   const [newClientStatus, setNewClientStatus] = useState<PaymentStatus>('pendente');
+
+  // Delete confirmation modal state
+  const [orderToDelete, setOrderToDelete] = useState<{ id: string; name: string } | null>(null);
 
   // Load orders
   const refreshOrders = () => {
@@ -158,7 +165,9 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
         fullName: order.clientName,
         birthDate: order.birthDate.includes('/') 
           ? order.birthDate.split('/').reverse().join('-') 
-          : order.birthDate || '1990-01-01'
+          : order.birthDate || '1990-01-01',
+        email: order.email,
+        phone: order.phone
       });
     }
 
@@ -181,22 +190,30 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
         fullName: order.clientName,
         birthDate: order.birthDate.includes('/') 
           ? order.birthDate.split('/').reverse().join('-') 
-          : order.birthDate || '1990-01-01'
+          : order.birthDate || '1990-01-01',
+        email: order.email,
+        phone: order.phone
       });
     }
+
     if (onSelectReportToView) {
       onSelectReportToView(reportToView);
       onClose();
     }
   };
 
-  // Delete order
+  // Open delete confirmation modal
   const handleDelete = (orderId: string, clientName: string) => {
-    if (confirm(`Tem certeza que deseja remover o registro de "${clientName}"?`)) {
-      deleteAdminOrder(orderId);
-      refreshOrders();
-      showNotification(`Registro de ${clientName} excluído.`);
-    }
+    setOrderToDelete({ id: orderId, name: clientName });
+  };
+
+  // Perform deletion
+  const handleConfirmDelete = () => {
+    if (!orderToDelete) return;
+    deleteAdminOrder(orderToDelete.id);
+    refreshOrders();
+    showNotification(`Registro de ${orderToDelete.name} excluído com sucesso.`);
+    setOrderToDelete(null);
   };
 
   // Manual new order submit
@@ -206,7 +223,9 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
 
     const report = generateNumerologyReport({
       fullName: newClientName.trim(),
-      birthDate: newClientBirthDate
+      birthDate: newClientBirthDate,
+      email: newClientEmail.trim() || undefined,
+      phone: newClientPhone.trim() || undefined
     });
 
     recordReportEmission(report, newClientStatus);
@@ -214,6 +233,8 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
     setIsAddModalOpen(false);
     setNewClientName('');
     setNewClientBirthDate('');
+    setNewClientEmail('');
+    setNewClientPhone('');
     setNewClientStatus('pendente');
     showNotification(`Novo registro para "${report.user.fullName}" criado com sucesso!`);
   };
@@ -221,11 +242,18 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
   // Filtered & searched orders
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      const matchName = order.clientName.toLowerCase().includes(searchTerm.toLowerCase());
+      const term = searchTerm.toLowerCase();
+      const matchName = order.clientName.toLowerCase().includes(term);
+      const matchEmail = (order.email || order.report?.user.email || '').toLowerCase().includes(term);
+      const cleanPhone = (order.phone || order.report?.user.phone || '').replace(/\D/g, '');
+      const cleanTerm = term.replace(/\D/g, '');
+      const matchPhone = (cleanTerm.length > 2 && cleanPhone.includes(cleanTerm)) || 
+                         (order.phone || order.report?.user.phone || '').toLowerCase().includes(term);
       const matchStatus = statusFilter === 'todos' || order.paymentStatus === statusFilter;
-      return matchName && matchStatus;
+      return (matchName || matchEmail || matchPhone) && matchStatus;
     });
   }, [orders, searchTerm, statusFilter]);
+
 
   // Financial and KPI statistics
   const stats = useMemo(() => {
@@ -558,6 +586,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                   <thead>
                     <tr className="bg-[#181a36] border-b border-slate-800 text-slate-400 uppercase tracking-wider font-semibold">
                       <th className="py-3 px-4">Nome do Consulente</th>
+                      <th className="py-3 px-4">E-mail & WhatsApp</th>
                       <th className="py-3 px-4">Data de Emissão do PDF</th>
                       <th className="py-3 px-4 text-center">Status do Pagamento</th>
                       <th className="py-3 px-4 text-center">Ação de Modificação</th>
@@ -567,11 +596,11 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                   <tbody className="divide-y divide-slate-800/60 text-slate-300">
                     {filteredOrders.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-12 text-center text-slate-500">
+                        <td colSpan={6} className="py-12 text-center text-slate-500">
                           <FileText className="w-8 h-8 mx-auto mb-2 text-slate-600 opacity-60" />
                           <p className="font-medium">Nenhum registro de emissão encontrado.</p>
                           <p className="text-[11px] mt-1 text-slate-600">
-                            {searchTerm ? 'Tente buscar com outro nome.' : 'Gere um mapa na aplicação ou crie um novo registro manual.'}
+                            {searchTerm ? 'Tente buscar com outro nome, e-mail ou telefone.' : 'Gere um mapa na aplicação ou crie um novo registro manual.'}
                           </p>
                         </td>
                       </tr>
@@ -608,6 +637,29 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                                 </div>
                               </div>
                             </td>
+
+                            {/* E-mail e WhatsApp com DDD */}
+                            <td className="py-3.5 px-4 text-slate-300">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1.5 text-slate-200" title="E-mail cadastrado">
+                                  <Mail className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                  <span className="font-medium text-[11px] truncate max-w-[190px]">
+                                    {order.email || order.report?.user.email || (
+                                      <span className="text-slate-500 italic">Não informado</span>
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-emerald-300" title="WhatsApp com DDD">
+                                  <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                  <span className="font-medium text-[11px]">
+                                    {order.phone || order.report?.user.phone || (
+                                      <span className="text-slate-500 italic">Não informado</span>
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+
 
                             {/* Data de Emissão do PDF */}
                             <td className="py-3.5 px-4 text-slate-300">
@@ -766,6 +818,32 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
 
               <div>
                 <label className="block text-slate-300 font-medium mb-1">
+                  E-mail do Consulente
+                </label>
+                <input
+                  type="email"
+                  value={newClientEmail}
+                  onChange={(e) => setNewClientEmail(e.target.value)}
+                  placeholder="exemplo@email.com"
+                  className="w-full px-3 py-2 bg-[#0a0b16] border border-slate-700 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">
+                  WhatsApp com DDD
+                </label>
+                <input
+                  type="tel"
+                  value={newClientPhone}
+                  onChange={(e) => setNewClientPhone(e.target.value)}
+                  placeholder="(11) 98765-4321"
+                  className="w-full px-3 py-2 bg-[#0a0b16] border border-slate-700 rounded-lg text-white focus:border-amber-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">
                   Status Inicial de Pagamento
                 </label>
                 <select
@@ -794,6 +872,44 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL DE CONFIRMAÇÃO DE EXCLUSÃO ================= */}
+      {orderToDelete && (
+        <div className="fixed inset-0 z-70 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="w-full max-w-sm bg-[#13152c] border border-red-500/40 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3 text-red-400">
+              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 shrink-0">
+                <Trash2 className="w-6 h-6 text-red-400" />
+              </div>
+              <div>
+                <h4 className="font-bold text-base text-white font-cinzel">Excluir Registro</h4>
+                <p className="text-xs text-slate-400">Ação permanente</p>
+              </div>
+            </div>
+
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              Tem certeza que deseja remover o registro de <strong className="text-white font-semibold">{orderToDelete.name}</strong>?
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setOrderToDelete(null)}
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold cursor-pointer transition-all shadow-lg shadow-red-600/30"
+              >
+                Sim, Excluir
+              </button>
+            </div>
           </div>
         </div>
       )}

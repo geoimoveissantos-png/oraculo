@@ -866,7 +866,9 @@ export function generateNumerologyReport(inputs: UserInputs): NumerologyReport {
       fullName: inputs.fullName.trim(),
       birthDate: inputs.birthDate,
       birthTime: inputs.birthTime,
-      formattedDate
+      formattedDate,
+      email: inputs.email ? inputs.email.trim() : undefined,
+      phone: inputs.phone ? inputs.phone.trim() : undefined
     },
     generatedAt: new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }),
     referralId,

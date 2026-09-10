@@ -1,9 +1,12 @@
 import QRCode from 'qrcode';
 
-export const PIX_KEY = '13996361313';
-export const PIX_RECIPIENT_NAME = 'Nome do Recebedor';
+export const PIX_KEY = '05a80ec0-cb6e-41f0-bae6-2b28f6736b12';
+export const PIX_RECIPIENT_NAME = 'Romildo Coelho da Silva';
 export const PIX_CITY = 'SAO PAULO';
 export const PIX_PRICE = 15.00;
+
+// Código Pix Oficial Copia e Cola fornecido pelo recebedor
+export const OFFICIAL_PIX_PAYLOAD = '00020126850014BR.GOV.BCB.PIX013605a80ec0-cb6e-41f0-bae6-2b28f6736b120223pagamento único Oráculo520400005303986540515.005802BR5923Romildo Coelho da Silva6009SAO PAULO62140510265ufqeSpz63042AB9';
 
 // Format EMV TLV (Type-Length-Value)
 function formatTLV(id: string, value: string): string {
@@ -36,8 +39,13 @@ export function generatePixPayload(
   name: string = PIX_RECIPIENT_NAME,
   city: string = PIX_CITY,
   amount: number = PIX_PRICE,
-  txid: string = 'NUMERO15'
+  txid: string = '265ufqeSpz'
 ): string {
+  // If using default configuration, return the exact verified Pix payload
+  if (key === PIX_KEY && amount === PIX_PRICE) {
+    return OFFICIAL_PIX_PAYLOAD;
+  }
+
   // Merchant Account Information (Tag 26)
   const gui = formatTLV('00', 'br.gov.bcb.pix');
   const pixKeyField = formatTLV('01', key);
@@ -68,14 +76,14 @@ export function generatePixPayload(
 }
 
 // Generate QR Code data URL (high resolution PNG)
-export async function generatePixQRCodeDataURL(payload: string): Promise<string> {
+export async function generatePixQRCodeDataURL(payload: string = OFFICIAL_PIX_PAYLOAD): Promise<string> {
   try {
     return await QRCode.toDataURL(payload, {
       errorCorrectionLevel: 'M',
-      margin: 2,
-      width: 320,
+      margin: 1,
+      width: 360,
       color: {
-        dark: '#0B0C16',
+        dark: '#000000',
         light: '#FFFFFF'
       }
     });
