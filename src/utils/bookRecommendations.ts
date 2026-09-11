@@ -121,37 +121,68 @@ export const ALL_INSPIRING_BOOKS: Record<string, RecommendedBook> = {
     whyItHelps: '10 lições práticas das Forças Especiais sobre como pequenas disciplinas diárias mudam a postura interior e pavimentam vitórias extraordinárias.',
     synergyReason: 'Cria uma base irredutível de disciplina para manifestar na matéria aquilo que os seus números revelam no plano sutil.',
     practicalKey: 'Conclua a primeira tarefa do dia com perfeição ao levantar-se; esse pequeno triunfo inicial desencadeia um efeito dominó de eficácia até a noite.'
+  },
+  quem_pensa_enriquece: {
+    id: 'quem_pensa_enriquece',
+    title: 'Quem Pensa Enriquece',
+    author: 'Napoleon Hill',
+    category: 'Filosofia da Conquista & Alquimia Mental',
+    bestsellerBadge: '+ 100 MILHÕES NO MUNDO',
+    themeColor: '#78350F',
+    accentColor: '#FBBF24',
+    gradientStart: '#2A1805',
+    gradientEnd: '#120A02',
+    iconType: 'open_book_light',
+    whyItHelps: 'Fruto de 25 anos de estudo dos 500 homens mais ricos do mundo. Revela a fórmula do Mastermind, a transmutação do desejo ardente e a fé inabalável em objetivos definidos.',
+    synergyReason: 'Conecta o consulente à força motriz da mente subconsciente para materializar as vibrações de prosperidade impressas no seu mapa.',
+    practicalKey: 'Escreva num papel o montante exato de prosperidade que pretende manifestar, o prazo limite e o que você dará em troca por essa realização; leia em voz alta ao acordar e ao deitar.'
+  },
+  poder_habito: {
+    id: 'poder_habito',
+    title: 'O Poder do Hábito',
+    author: 'Charles Duhigg',
+    category: 'Neurociência do Comportamento & Rotinas',
+    bestsellerBadge: '+ 3 MILHÕES NO BRASIL',
+    themeColor: '#1E293B',
+    accentColor: '#38BDF8',
+    gradientStart: '#0F172A',
+    gradientEnd: '#020617',
+    iconType: 'navy_stars',
+    whyItHelps: 'Desvenda o loop neurológico do hábito: Deixa, Rotina e Recompensa. Demonstra como reprogramar comportamentos sabotadores substituindo a rotina intermediária sem perder a recompensa.',
+    synergyReason: 'Permite ancorar os rituais, banhos e decretos numerológicos como reflexos automáticos no dia a dia, eliminando o esforço consciente e a preguiça.',
+    practicalKey: 'Identifique o gatilho da sua procrastinação diária e associe imediatamente uma microação de 2 minutos para quebrar o ciclo de inércia.'
+  },
+  essencialismo: {
+    id: 'essencialismo',
+    title: 'Essencialismo',
+    author: 'Greg McKeown',
+    category: 'Foco Radical & Economia de Energia',
+    bestsellerBadge: '#1 DO THE NEW YORK TIMES',
+    themeColor: '#047857',
+    accentColor: '#34D399',
+    gradientStart: '#064E3B',
+    gradientEnd: '#022C22',
+    iconType: 'enso_sword',
+    whyItHelps: 'A disciplinada busca por menos. Ensina a discernir o que é vitalmente importante daquilo que é apenas trivialmente atraente, blindando o tempo e o foco realizador.',
+    synergyReason: 'Vital para proteger a energia do consulente contra dispersões, permitindo concentrar toda a potência dos seus números nas metas de maior retorno.',
+    practicalKey: 'Aprenda a dizer não com elegância e firmeza a compromissos e convites que não convergem diretamente com o seu objetivo primordial de vida.'
   }
 };
 
-// Selection algorithm tailored to the client's numerology profile
-export function getRecommendedBooksForReport(report: NumerologyReport): RecommendedBook[] {
-  const lp = report.lifePath.number;
-  const isMaster = report.lifePath.isMaster;
+// Selection algorithm providing random suggestions maintaining at least 3 books
+export function getRecommendedBooksForReport(report?: NumerologyReport, count: number = 3): RecommendedBook[] {
+  const allBooks = Object.values(ALL_INSPIRING_BOOKS);
 
-  // Selected keys based on Life Path archetype
-  let keys: string[] = [];
-
-  if (lp === 1 || lp === 8 || lp === 22) {
-    // Leadership, Mastery, Abundance, Authority
-    keys = ['mente_milionaria', 'arte_guerra', 'mais_esperto_diabo', 'pai_rico'];
-  } else if (lp === 2 || lp === 6 || lp === 9 || lp === 33) {
-    // Care, Empathy, Community, Higher Purpose
-    keys = ['mente_milionaria', 'nunca_desista', 'babilonia', 'arrume_cama'];
-  } else if (lp === 3 || lp === 5) {
-    // Creativity, Communication, Transformation, Freedom
-    keys = ['mais_esperto_diabo', 'mente_milionaria', 'arrume_cama', 'pai_rico'];
-  } else if (lp === 4 || lp === 7 || lp === 11) {
-    // Strategy, Inner Wisdom, Methodical Mastery
-    keys = ['babilonia', 'mais_esperto_diabo', 'arte_guerra', 'mente_milionaria'];
-  } else {
-    // Default high-impact triad
-    keys = ['mente_milionaria', 'mais_esperto_diabo', 'babilonia', 'arrume_cama'];
+  // Modern Fisher-Yates random shuffle
+  const shuffled = [...allBooks];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
 
-  // Ensure at least 3 books, max 3 or 4
-  const selected = keys.map(k => ALL_INSPIRING_BOOKS[k]).filter(Boolean);
-  return selected.slice(0, 3);
+  // Always return at least 3 suggestions
+  const targetCount = Math.max(3, count);
+  return shuffled.slice(0, targetCount);
 }
 
 // Generate realistic 300-DPI visual book cover using HTML5 Canvas (browser-safe)

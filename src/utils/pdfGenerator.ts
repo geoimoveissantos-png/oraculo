@@ -1,9 +1,9 @@
 import jsPDF from 'jspdf';
 import { NumerologyReport } from '../types';
 import { calculateAuraProfile, getFrequencyYouTubeInfo } from './numerology';
-import { getRecommendedBooksForReport, generateBookCoverDataUrl } from './bookRecommendations';
+import { getRecommendedBooksForReport, generateBookCoverDataUrl, RecommendedBook } from './bookRecommendations';
 
-export function generatePDF(report: NumerologyReport) {
+export function generatePDF(report: NumerologyReport, customBooks?: RecommendedBook[]) {
   // A4 dimensions in mm: 210 x 297
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -29,7 +29,7 @@ export function generatePDF(report: NumerologyReport) {
   const referralUrl = `https://seudominio.com/?ref=${report.referralId}`;
   const PIX_NUBANK_URL = 'https://nubank.com.br/cobrar/dx851l/6aa2c5cb-60b9-4de0-aac4-53324bc8ec8d';
 
-  // Helper: Draw Header (Pages 2 to 6)
+  // Helper: Draw Header (Pages 2 to 8)
   const drawPageHeader = (pageNum: number, sectionTitle: string) => {
     // Top border accent
     doc.setFillColor(ACCENT_GOLD);
@@ -37,22 +37,15 @@ export function generatePDF(report: NumerologyReport) {
 
     // Header Title
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
+    doc.setFontSize(7.8);
     doc.setTextColor(PRIMARY);
     doc.text('MAPA NUMEROLÓGICO & DIAGNÓSTICO DE PROSPERIDADE', margin, 16);
 
-    // Section sub
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(ACCENT_GOLD);
-    doc.text(`• ${sectionTitle.toUpperCase()}`, margin + 85, 16);
-
-    // User Name & Date
-    doc.setFont('helvetica', 'normal');
+    // Section title aligned to the right (never overlaps with left title or truncates)
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.2);
-    doc.setTextColor(TEXT_MUTED);
-    const metaRight = `${report.user.fullName} • ${report.generatedAt}`;
-    doc.text(metaRight, pageWidth - margin, 16, { align: 'right' });
+    doc.setTextColor(ACCENT_GOLD);
+    doc.text(sectionTitle.toUpperCase(), pageWidth - margin, 16, { align: 'right' });
 
     // Subtle line below header
     doc.setDrawColor(226, 232, 240);
@@ -60,7 +53,7 @@ export function generatePDF(report: NumerologyReport) {
     doc.line(margin, 19, pageWidth - margin, 19);
   };
 
-  // Helper: Draw Footer (Pages 2 to 7)
+  // Helper: Draw Footer (Pages 2 to 8)
   const drawPageFooter = (pageNum: number) => {
     // Divider line
     doc.setDrawColor(226, 232, 240);
@@ -72,7 +65,7 @@ export function generatePDF(report: NumerologyReport) {
     doc.setFontSize(6.8);
     doc.setTextColor(TEXT_MUTED);
     const pixPrefix = 'Se você se esqueceu de efetuar o pagamento pode fazer o pix através do link a seguir: ';
-    doc.text(pixPrefix, margin, pageHeight - 10.5);
+    doc.text(pixPrefix, margin, pageHeight - 11.2);
 
     const prefixWidth = doc.getTextWidth(pixPrefix);
     const linkText = 'FAZER PIX AGORA';
@@ -80,25 +73,43 @@ export function generatePDF(report: NumerologyReport) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.0);
     doc.setTextColor(130, 10, 209); // Nubank purple #820AD1
-    doc.textWithLink(linkText, margin + prefixWidth, pageHeight - 10.5, { url: PIX_NUBANK_URL });
+    doc.textWithLink(linkText, margin + prefixWidth, pageHeight - 11.2, { url: PIX_NUBANK_URL });
 
     const linkWidth = doc.getTextWidth(linkText);
     doc.setDrawColor(130, 10, 209);
     doc.setLineWidth(0.3);
-    doc.line(margin + prefixWidth, pageHeight - 9.8, margin + prefixWidth + linkWidth, pageHeight - 9.8);
-    doc.link(margin + prefixWidth - 1, pageHeight - 13.5, linkWidth + 2, 4.5, { url: PIX_NUBANK_URL });
+    doc.line(margin + prefixWidth, pageHeight - 10.5, margin + prefixWidth + linkWidth, pageHeight - 10.5);
+    doc.link(margin + prefixWidth - 1, pageHeight - 14.0, linkWidth + 2, 4.5, { url: PIX_NUBANK_URL });
 
-    // Sub-row: Referral link and page number
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.5);
-    doc.setTextColor(TEXT_MUTED);
-    doc.text(`Link de Indicação & Ativação: ${referralUrl}`, margin, pageHeight - 5.5);
-
-    // Page number
+    // Nome do consulente: posicionado no rodapé abaixo à esquerda, acima da numeração da página
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.0);
+    doc.setFontSize(6.8);
     doc.setTextColor(PRIMARY);
-    doc.text(`Página ${pageNum} de ${totalPages}`, pageWidth - margin, pageHeight - 5.5, { align: 'right' });
+    doc.text('Consulente: ', margin, pageHeight - 7.0);
+
+    const consPrefixW = doc.getTextWidth('Consulente: ');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(TEXT_DARK);
+    doc.text(report.user.fullName, margin + consPrefixW, pageHeight - 7.0);
+
+    // Data de emissão à direita
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.2);
+    doc.setTextColor(TEXT_MUTED);
+    doc.text(`Emitido em: ${report.generatedAt}`, pageWidth - margin, pageHeight - 7.0, { align: 'right' });
+
+    // Numeração da página abaixo à esquerda (abaixo do nome do consulente)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.8);
+    doc.setTextColor(PRIMARY);
+    doc.text(`Página ${pageNum} de ${totalPages}`, margin, pageHeight - 3.8);
+
+    // Link de Ativação à direita
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.2);
+    doc.setTextColor(TEXT_MUTED);
+    doc.text(`Link de Indicação & Ativação: ${referralUrl}`, pageWidth - margin, pageHeight - 3.8, { align: 'right' });
   };
 
   // Helper: Card background
@@ -1561,8 +1572,8 @@ export function generatePDF(report: NumerologyReport) {
   const splitIntro = doc.splitTextToSize(introTxt, contentWidth - 12);
   doc.text(splitIntro, centerX, introY + 11.2, { align: 'center' });
 
-  // Recommended books tailored to this report
-  const recommendedBooks = getRecommendedBooksForReport(report);
+  // Recommended books tailored to this report (randomized suggestions maintaining at least 3 books)
+  const recommendedBooks = (customBooks && customBooks.length >= 3) ? customBooks : getRecommendedBooksForReport(report);
   const booksStartY = 45;
   const bookCardH = 64;
   const bookCardSpacing = 3.5;

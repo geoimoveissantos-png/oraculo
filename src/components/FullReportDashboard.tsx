@@ -62,11 +62,12 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
     }
   });
   const [selectedFrequency, setSelectedFrequency] = useState<SoundFrequency | null>(null);
+  const [recommendedBooks, setRecommendedBooks] = useState(() => getRecommendedBooksForReport(report));
 
   const performDownload = () => {
     setIsDownloading(true);
     try {
-      generatePDF(report);
+      generatePDF(report, recommendedBooks);
       recordReportEmission(report, 'pago');
     } catch (err) {
       console.error('Error generating PDF:', err);
@@ -1237,8 +1238,18 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
                   Guia de Leitura Inspiradora & Mestria Pessoal
                 </h3>
               </div>
-              <div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold">
-                Sintonizado com Caminho {report.lifePath.number}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setRecommendedBooks(getRecommendedBooksForReport(report))}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-semibold transition-all hover:scale-105 active:scale-95"
+                  title="Gerar 3 novas sugestões aleatórias de livros"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Sortear Outras 3 Sugestões
+                </button>
+                <div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+                  Sintonizado com Caminho {report.lifePath.number}
+                </div>
               </div>
             </div>
 
@@ -1248,7 +1259,7 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
 
             {/* List of Recommended Books */}
             <div className="space-y-6">
-              {getRecommendedBooksForReport(report).map((book, idx) => {
+              {recommendedBooks.map((book, idx) => {
                 const coverDataUrl = generateBookCoverDataUrl(book, 220, 330);
                 return (
                   <div
