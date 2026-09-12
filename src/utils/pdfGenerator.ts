@@ -26,31 +26,39 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
   const TEXT_MUTED = '#6B7280';
   const BORDER_COLOR = '#E2E8F0';
 
-  const referralUrl = `https://consultadivina.netlify.app/?ref=${report.referralId}`;
+  const referralUrl = `https://consultadivinareal.netlify.app/?ref=${report.referralId}`;
   const PIX_NUBANK_URL = 'https://nubank.com.br/cobrar/dx851l/6aa2c5cb-60b9-4de0-aac4-53324bc8ec8d';
 
   // Helper: Draw Header (Pages 2 to 8)
   const drawPageHeader = (pageNum: number, sectionTitle: string) => {
-    // Top border accent
+    // Top border accent (double gold & primary)
     doc.setFillColor(ACCENT_GOLD);
-    doc.rect(margin, 10, contentWidth, 0.8, 'F');
+    doc.rect(margin, 9.5, contentWidth, 0.8, 'F');
+    doc.setFillColor(PRIMARY);
+    doc.rect(margin, 10.5, contentWidth, 0.2, 'F');
 
-    // Header Title
+    // Header Left: CONSULTA DIVINA REAL with sacred star
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.8);
-    doc.setTextColor(PRIMARY);
-    doc.text('MAPA NUMEROLÓGICO & DIAGNÓSTICO DE PROSPERIDADE', margin, 16);
+    doc.setFontSize(8.2);
+    doc.setTextColor(ACCENT_GOLD);
+    doc.text('✦ CONSULTA DIVINA REAL ✦', margin, 15.5);
 
-    // Section title aligned to the right (never overlaps with left title or truncates)
+    const brandWidth = doc.getTextWidth('✦ CONSULTA DIVINA REAL ✦');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(TEXT_MUTED);
+    doc.text('•  Mapa Numerológico & Prosperidade Sagrada', margin + brandWidth + 2.5, 15.5);
+
+    // Section title aligned to the right
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.2);
-    doc.setTextColor(ACCENT_GOLD);
-    doc.text(sectionTitle.toUpperCase(), pageWidth - margin, 16, { align: 'right' });
+    doc.setTextColor(PRIMARY);
+    doc.text(sectionTitle.toUpperCase(), pageWidth - margin, 15.5, { align: 'right' });
 
     // Subtle line below header
-    doc.setDrawColor(226, 232, 240);
+    doc.setDrawColor(220, 226, 238);
     doc.setLineWidth(0.3);
-    doc.line(margin, 19, pageWidth - margin, 19);
+    doc.line(margin, 18.5, pageWidth - margin, 18.5);
   };
 
   // Helper: Draw Footer (Pages 2 to 8)
@@ -81,17 +89,23 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
     doc.line(margin + prefixWidth, pageHeight - 10.5, margin + prefixWidth + linkWidth, pageHeight - 10.5);
     doc.link(margin + prefixWidth - 1, pageHeight - 14.0, linkWidth + 2, 4.5, { url: PIX_NUBANK_URL });
 
-    // Nome do consulente: posicionado no rodapé abaixo à esquerda, acima da numeração da página
+    // Nome da Consulta e do Consulente: posicionado no rodapé abaixo à esquerda, acima da numeração da página
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.8);
     doc.setTextColor(PRIMARY);
-    doc.text('Consulente: ', margin, pageHeight - 7.0);
+    doc.text('CONSULTA DIVINA REAL', margin, pageHeight - 7.0);
 
-    const consPrefixW = doc.getTextWidth('Consulente: ');
+    const consBrandW = doc.getTextWidth('CONSULTA DIVINA REAL');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.8);
+    doc.setTextColor(ACCENT_GOLD);
+    doc.text(' • Consulente: ', margin + consBrandW, pageHeight - 7.0);
+
+    const consPrefixW = doc.getTextWidth(' • Consulente: ');
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.8);
     doc.setTextColor(TEXT_DARK);
-    doc.text(report.user.fullName, margin + consPrefixW, pageHeight - 7.0);
+    doc.text(report.user.fullName, margin + consBrandW + consPrefixW, pageHeight - 7.0);
 
     // Data de emissão à direita
     doc.setFont('helvetica', 'normal');
@@ -222,83 +236,502 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
     doc.text('Ω', cx + size * 0.55, cy - size * 0.15, { align: 'left' });
   };
 
+  // Helper: Draw Triple Moon (Tríplice Lua Sagrada - Inspirado na Imagem Mística)
+  const drawTripleMoon = (cx: number, cy: number, r: number, strokeColor: string = ACCENT_GOLD) => {
+    doc.setDrawColor(strokeColor);
+    doc.setLineWidth(0.4);
+
+    // Full Moon (Center)
+    doc.circle(cx, cy, r, 'S');
+    doc.setLineWidth(0.2);
+    doc.circle(cx, cy, r * 0.72, 'S');
+    doc.circle(cx, cy, 0.9, 'F');
+
+    // Left Waxing Crescent (Crescente à Esquerda)
+    doc.setLineWidth(0.35);
+    doc.circle(cx - r * 2.2, cy, r * 0.95, 'S');
+    doc.setLineWidth(0.25);
+    doc.circle(cx - r * 1.85, cy, r * 0.88, 'S');
+
+    // Right Waning Crescent (Minguante à Direita)
+    doc.setLineWidth(0.35);
+    doc.circle(cx + r * 2.2, cy, r * 0.95, 'S');
+    doc.setLineWidth(0.25);
+    doc.circle(cx + r * 1.85, cy, r * 0.88, 'S');
+
+    // Orbital Axis & Celestial Stars
+    doc.setLineWidth(0.2);
+    doc.line(cx - r * 3.8, cy, cx - r * 2.9, cy);
+    doc.line(cx + r * 2.9, cy, cx + r * 3.8, cy);
+
+    // Small astral dots
+    doc.circle(cx - r * 4.1, cy, 0.6, 'F');
+    doc.circle(cx + r * 4.1, cy, 0.6, 'F');
+  };
+
+  // Helper: Draw Vintage Hourglass of Eternity (Ampulheta Mística - Inspirado na Imagem)
+  const drawVintageHourglass = (x: number, y: number, w: number, h: number, strokeColor: string = ACCENT_GOLD) => {
+    doc.setDrawColor(strokeColor);
+    doc.setLineWidth(0.5);
+
+    // Top Carved Pediment
+    doc.line(x - 1.2, y, x + w + 1.2, y);
+    doc.line(x, y + 2.2, x + w, y + 2.2);
+    doc.circle(x + w / 2, y - 1.2, 0.9, 'S');
+
+    // Bottom Base
+    doc.line(x, y + h - 2.2, x + w, y + h - 2.2);
+    doc.line(x - 1.2, y + h, x + w + 1.2, y + h);
+    doc.circle(x + w / 2, y + h + 1.2, 0.9, 'S');
+
+    // Left Turned Pillar
+    doc.setLineWidth(0.35);
+    doc.line(x + 1.2, y + 2.2, x + 1.2, y + h - 2.2);
+    doc.circle(x + 1.2, y + h / 2, 0.8, 'S');
+
+    // Right Turned Pillar
+    doc.line(x + w - 1.2, y + 2.2, x + w - 1.2, y + h - 2.2);
+    doc.circle(x + w - 1.2, y + h / 2, 0.8, 'S');
+
+    // Glass Chambers (Curved bulb profile)
+    doc.setLineWidth(0.3);
+    const neckY = y + h / 2;
+    const neckHalfW = 1.0;
+    const midX = x + w / 2;
+
+    // Upper bulb contour
+    doc.line(x + 2.8, y + 3.0, midX - neckHalfW, neckY);
+    doc.line(x + w - 2.8, y + 3.0, midX + neckHalfW, neckY);
+
+    // Lower bulb contour
+    doc.line(midX - neckHalfW, neckY, x + 2.8, y + h - 3.0);
+    doc.line(midX + neckHalfW, neckY, x + w - 2.8, y + h - 3.0);
+
+    // Falling Sand of Cosmic Time
+    doc.setLineWidth(0.2);
+    doc.line(midX - 2.5, y + 6.5, midX + 2.5, y + 6.5);
+    doc.line(midX, y + 6.5, midX, y + h - 4.5);
+    doc.line(midX - 3.2, y + h - 4.5, midX + 3.2, y + h - 4.5);
+    doc.circle(midX, y + h - 5.2, 1.2, 'S');
+  };
+
+  // Helper: Draw Sacred Dreamcatcher & Mandala (Filtro Sagrado & Mandala - Inspirado na Imagem)
+  const drawSacredDreamcatcher = (cx: number, cy: number, r: number, strokeColor: string = ACCENT_GOLD, lifePathNum: number = 8) => {
+    doc.setDrawColor(strokeColor);
+    doc.setLineWidth(0.6);
+
+    // Outer Main Sacred Hoop
+    doc.circle(cx, cy, r, 'S');
+    doc.setLineWidth(0.25);
+    doc.circle(cx, cy, r - 0.9, 'S');
+    doc.circle(cx, cy, r * 1.14, 'S');
+
+    // Radial Web Points (Geometria Sagrada tecida)
+    const pointsCount = 12;
+    const pts: [number, number][] = [];
+    for (let i = 0; i < pointsCount; i++) {
+      const angle = (i * 2 * Math.PI) / pointsCount;
+      pts.push([cx + (r - 1.2) * Math.cos(angle), cy + (r - 1.2) * Math.sin(angle)]);
+    }
+
+    doc.setLineWidth(0.2);
+    for (let i = 0; i < pointsCount; i++) {
+      const pNext = pts[(i + 4) % pointsCount];
+      doc.line(pts[i][0], pts[i][1], pNext[0], pNext[1]);
+    }
+
+    // Inner Radiant Jewel containing Life Path Number
+    doc.setFillColor(24, 26, 48);
+    doc.circle(cx, cy, r * 0.42, 'F');
+    doc.setDrawColor(ACCENT_GOLD);
+    doc.setLineWidth(0.4);
+    doc.circle(cx, cy, r * 0.42, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(ACCENT_GOLD_LIGHT);
+    doc.text(String(lifePathNum), cx, cy + 2.0, { align: 'center' });
+
+    // Hanging Sacred Feathers & Pendants (3 Pêndulos com Penas)
+    const drawFeather = (fx: number, fy: number, len: number, angleDeg: number = 0) => {
+      const rad = (angleDeg * Math.PI) / 180;
+      const endX = fx + len * Math.sin(rad);
+      const endY = fy + len * Math.cos(rad);
+      doc.setLineWidth(0.25);
+      doc.line(fx, fy, endX, endY); // Quill central spine
+
+      // Vane leaf contour
+      const midX = (fx + endX) / 2;
+      const midY = (fy + endY) / 2;
+      const normX = Math.cos(rad) * 1.5;
+      const normY = -Math.sin(rad) * 1.5;
+
+      doc.setLineWidth(0.18);
+      doc.line(fx, fy, midX + normX, midY + normY);
+      doc.line(midX + normX, midY + normY, endX, endY);
+      doc.line(fx, fy, midX - normX, midY - normY);
+      doc.line(midX - normX, midY - normY, endX, endY);
+    };
+
+    // Central Pendant
+    doc.setLineWidth(0.3);
+    doc.line(cx, cy + r, cx, cy + r + 5.5);
+    doc.circle(cx, cy + r + 6.3, 1.0, 'S');
+    drawFeather(cx, cy + r + 7.3, 16, 0);
+    drawFeather(cx, cy + r + 7.3, 13, -16);
+    drawFeather(cx, cy + r + 7.3, 13, 16);
+
+    // Left Pendant
+    const leftX = cx - r * 0.65;
+    const leftY = cy + r * 0.75;
+    doc.line(leftX, leftY, leftX, leftY + 4.5);
+    doc.circle(leftX, leftY + 5.2, 0.8, 'S');
+    drawFeather(leftX, leftY + 6.0, 12, -8);
+    drawFeather(leftX, leftY + 6.0, 10, 12);
+
+    // Right Pendant
+    const rightX = cx + r * 0.65;
+    const rightY = cy + r * 0.75;
+    doc.line(rightX, rightY, rightX, rightY + 4.5);
+    doc.circle(rightX, rightY + 5.2, 0.8, 'S');
+    drawFeather(rightX, rightY + 6.0, 12, 8);
+    drawFeather(rightX, rightY + 6.0, 10, -12);
+  };
+
+  // Helper: Draw Symmetrical Tarot Cards Fan (Cartas Cósmicas de Oráculo - Inspirado na Imagem)
+  const drawTarotCardFan = (cx: number, cy: number, side: 'left' | 'right', strokeColor: string = ACCENT_GOLD) => {
+    doc.setDrawColor(strokeColor);
+    const cardW = 11;
+    const cardH = 19;
+    const offsets = side === 'left' ? [-14, -7, 0] : [0, 7, 14];
+
+    offsets.forEach((offX, idx) => {
+      const posX = cx + offX - cardW / 2;
+      const posY = cy + (idx === 1 ? -1.5 : 0.5) - cardH / 2;
+      doc.setFillColor(28, 30, 52);
+      doc.roundedRect(posX, posY, cardW, cardH, 1, 1, 'F');
+      doc.setLineWidth(0.35);
+      doc.roundedRect(posX, posY, cardW, cardH, 1, 1, 'S');
+
+      // Inner border
+      doc.setLineWidth(0.18);
+      doc.rect(posX + 1.2, posY + 1.2, cardW - 2.4, cardH - 2.4);
+
+      // Diamond criss-cross back pattern
+      doc.line(posX + 1.2, posY + cardH / 2, posX + cardW / 2, posY + 1.2);
+      doc.line(posX + cardW / 2, posY + 1.2, posX + cardW - 1.2, posY + cardH / 2);
+      doc.line(posX + cardW - 1.2, posY + cardH / 2, posX + cardW / 2, posY + cardH - 1.2);
+      doc.line(posX + cardW / 2, posY + cardH - 1.2, posX + 1.2, posY + cardH / 2);
+      doc.circle(posX + cardW / 2, posY + cardH / 2, 0.7, 'F');
+    });
+  };
+
+  // Helper: Draw Ritual Ceremony Candle with Glowing Flame (Vela Ritual com Chama - Inspirado na Imagem)
+  const drawRitualCandle = (x: number, y: number, w: number, h: number, strokeColor: string = ACCENT_GOLD) => {
+    // Candle wax body
+    doc.setFillColor(34, 38, 65);
+    doc.roundedRect(x, y, w, h, 1.2, 1.2, 'F');
+    doc.setDrawColor(strokeColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(x, y, w, h, 1.2, 1.2, 'S');
+
+    // Melting wax drips
+    doc.setLineWidth(0.25);
+    doc.line(x + 1.8, y, x + 1.8, y + 4.5);
+    doc.circle(x + 1.8, y + 4.8, 0.6, 'S');
+    doc.line(x + w - 2.0, y, x + w - 2.0, y + 3.2);
+    doc.circle(x + w - 2.0, y + 3.5, 0.5, 'S');
+
+    // Candle Wick
+    const midX = x + w / 2;
+    doc.setDrawColor(40, 42, 60);
+    doc.setLineWidth(0.5);
+    doc.line(midX, y, midX, y - 2.2);
+
+    // Radiant Flame (Teardrop contour)
+    doc.setDrawColor(ACCENT_GOLD);
+    doc.setFillColor(243, 229, 171); // Light gold
+    doc.circle(midX, y - 4.5, 1.8, 'F');
+    doc.circle(midX, y - 4.5, 1.8, 'S');
+    doc.line(midX - 1.5, y - 4.2, midX, y - 7.5);
+    doc.line(midX + 1.5, y - 4.2, midX, y - 7.5);
+
+    // Luminous Aura Radiance Rays
+    doc.setLineWidth(0.18);
+    doc.line(midX - 3.8, y - 5.0, midX - 2.2, y - 5.0);
+    doc.line(midX + 2.2, y - 5.0, midX + 3.8, y - 5.0);
+    doc.line(midX, y - 9.0, midX, y - 7.8);
+  };
+
+  // Helper: Background Esoteric Runes & Stippling (Runas Ancestrais de Fundo)
+  const drawBackgroundMysticalRunes = (startX: number, startY: number, w: number, h: number) => {
+    const runes = ['ᚠ', 'ᚢ', 'ᚦ', 'ᚨ', 'ᚱ', 'ᚲ', 'ᚷ', 'ᚹ', 'ᚺ', 'ᛉ', 'ᛋ', 'ᛏ', 'ᛒ', 'ᛖ', 'ᛗ', 'ᛞ', 'ᛟ', '✦', '⋆', '✧'];
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(42, 46, 80); // Faint cosmic indigo
+
+    const cols = 12;
+    const rows = 14;
+    const stepX = w / cols;
+    const stepY = h / rows;
+
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        if ((r * 7 + c * 13) % 3 === 0) {
+          const glyph = runes[(r * 5 + c * 3) % runes.length];
+          const rx = startX + c * stepX + (r % 2 === 0 ? 3 : -2);
+          const ry = startY + r * stepY + (c % 2 === 0 ? 2 : -1);
+          doc.text(glyph, rx, ry);
+        }
+      }
+    }
+  };
+
+  // Helper: Draw Majestic Esoteric Watermarks (Marcas D'água Místicas nas Páginas 2 a 8)
+  const drawEsotericWatermark = (pageNum: number) => {
+    const cx = pageWidth / 2; // 105 mm
+    const cy = 152; // Centro do conteúdo
+    const WM_COLOR = '#E4E7F5'; // Delicate celestial slate
+    const WM_GOLD = '#ECE7DC'; // Subtle parchment gold
+
+    doc.setDrawColor(WM_COLOR);
+    doc.setLineWidth(0.18);
+
+    if (pageNum === 2) {
+      // PAGE 2 WATERMARK: Metatron's Cube & 9 Pythagorean Numbers Circle
+      for (let r of [18, 36, 54, 70]) {
+        doc.circle(cx, cy, r, 'S');
+      }
+      doc.setDrawColor(WM_GOLD);
+      const hexPoints: [number, number][] = [];
+      for (let i = 0; i < 6; i++) {
+        const ang = (i * Math.PI) / 3;
+        hexPoints.push([cx + 54 * Math.cos(ang), cy + 54 * Math.sin(ang)]);
+        doc.circle(cx + 54 * Math.cos(ang), cy + 54 * Math.sin(ang), 5.5, 'S');
+      }
+      for (let i = 0; i < 6; i++) {
+        for (let j = i + 1; j < 6; j++) {
+          doc.line(hexPoints[i][0], hexPoints[i][1], hexPoints[j][0], hexPoints[j][1]);
+        }
+      }
+      // 9 Pythagorean Numbers in circle
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(215, 219, 235);
+      for (let n = 1; n <= 9; n++) {
+        const ang = ((n - 1) * 2 * Math.PI) / 9 - Math.PI / 2;
+        doc.text(String(n), cx + 62 * Math.cos(ang), cy + 62 * Math.sin(ang) + 2.5, { align: 'center' });
+      }
+    } else if (pageNum === 3) {
+      // PAGE 3 WATERMARK: Sri Yantra & Biofotônica Aura Lotus Mandala
+      doc.circle(cx, cy, 68, 'S');
+      doc.circle(cx, cy, 64, 'S');
+      doc.circle(cx, cy, 48, 'S');
+      doc.circle(cx, cy, 32, 'S');
+      doc.circle(cx, cy, 16, 'S');
+      doc.setDrawColor(WM_GOLD);
+      for (let i = 0; i < 16; i++) {
+        const ang = (i * 2 * Math.PI) / 16;
+        doc.line(cx + 16 * Math.cos(ang), cy + 16 * Math.sin(ang), cx + 64 * Math.cos(ang), cy + 64 * Math.sin(ang));
+      }
+      const tH = 38;
+      doc.line(cx, cy - tH, cx + 33, cy + tH * 0.5);
+      doc.line(cx + 33, cy + tH * 0.5, cx - 33, cy + tH * 0.5);
+      doc.line(cx - 33, cy + tH * 0.5, cx, cy - tH);
+      doc.line(cx, cy + tH, cx + 33, cy - tH * 0.5);
+      doc.line(cx + 33, cy - tH * 0.5, cx - 33, cy - tH * 0.5);
+      doc.line(cx - 33, cy - tH * 0.5, cx, cy + tH);
+    } else if (pageNum === 4) {
+      // PAGE 4 WATERMARK: Octagram of Abundance & Sacred Infinity (∞)
+      doc.circle(cx, cy, 65, 'S');
+      doc.setDrawColor(WM_GOLD);
+      const rInf = 22;
+      doc.circle(cx - rInf, cy, rInf, 'S');
+      doc.circle(cx + rInf, cy, rInf, 'S');
+      doc.circle(cx - rInf, cy, rInf * 0.7, 'S');
+      doc.circle(cx + rInf, cy, rInf * 0.7, 'S');
+      const starR = 48;
+      doc.rect(cx - starR * 0.7, cy - starR * 0.7, starR * 1.4, starR * 1.4);
+      const p = starR;
+      doc.line(cx, cy - p, cx + p, cy);
+      doc.line(cx + p, cy, cx, cy + p);
+      doc.line(cx, cy + p, cx - p, cy);
+      doc.line(cx - p, cy, cx, cy - p);
+    } else if (pageNum === 5) {
+      // PAGE 5 WATERMARK: Celestial Hourglass of Time & 12 Zodiac Wheel
+      doc.circle(cx, cy, 66, 'S');
+      doc.circle(cx, cy, 58, 'S');
+      for (let i = 0; i < 12; i++) {
+        const ang = (i * 2 * Math.PI) / 12;
+        doc.line(cx + 42 * Math.cos(ang), cy + 42 * Math.sin(ang), cx + 58 * Math.cos(ang), cy + 58 * Math.sin(ang));
+      }
+      doc.setDrawColor(WM_GOLD);
+      const hgW = 28;
+      const hgH = 48;
+      doc.line(cx - hgW / 2, cy - hgH / 2, cx + hgW / 2, cy - hgH / 2);
+      doc.line(cx - hgW / 2, cy + hgH / 2, cx + hgW / 2, cy + hgH / 2);
+      doc.line(cx - hgW / 2 + 2, cy - hgH / 2, cx, cy);
+      doc.line(cx + hgW / 2 - 2, cy - hgH / 2, cx, cy);
+      doc.line(cx, cy, cx - hgW / 2 + 2, cy + hgH / 2);
+      doc.line(cx, cy, cx + hgW / 2 - 2, cy + hgH / 2);
+    } else if (pageNum === 6) {
+      // PAGE 6 WATERMARK: Alchemical Chalice, Triple Moon & Sacred Flame
+      doc.circle(cx, cy, 64, 'S');
+      doc.setDrawColor(WM_GOLD);
+      doc.circle(cx, cy - 25, 14, 'S');
+      doc.circle(cx - 28, cy - 25, 13, 'S');
+      doc.circle(cx + 28, cy - 25, 13, 'S');
+      doc.line(cx - 24, cy - 10, cx + 24, cy - 10);
+      doc.line(cx - 24, cy - 10, cx - 18, cy + 18);
+      doc.line(cx + 24, cy - 10, cx + 18, cy + 18);
+      doc.line(cx - 18, cy + 18, cx + 18, cy + 18);
+      doc.line(cx, cy + 18, cx, cy + 38);
+      doc.line(cx - 18, cy + 38, cx + 18, cy + 38);
+      doc.circle(cx, cy + 10, 42, 'S');
+    } else if (pageNum === 7) {
+      // PAGE 7 WATERMARK: Grand Solomon's Seal & Luminous Eye of Providence
+      doc.circle(cx, cy, 66, 'S');
+      doc.circle(cx, cy, 60, 'S');
+      doc.setDrawColor(WM_GOLD);
+      for (let a = 0; a < 360; a += 15) {
+        const rad = (a * Math.PI) / 180;
+        doc.line(cx + 24 * Math.cos(rad), cy + 24 * Math.sin(rad), cx + 58 * Math.cos(rad), cy + 58 * Math.sin(rad));
+      }
+      const pyH = 42;
+      doc.line(cx, cy - pyH * 0.65, cx + 32, cy + pyH * 0.45);
+      doc.line(cx + 32, cy + pyH * 0.45, cx - 32, cy + pyH * 0.45);
+      doc.line(cx - 32, cy + pyH * 0.45, cx, cy - pyH * 0.65);
+      doc.circle(cx, cy + 2, 7, 'S');
+      doc.circle(cx, cy + 2, 2.5, 'S');
+    } else if (pageNum === 8) {
+      // PAGE 8 WATERMARK: Temple Portal of Wisdom & Crossed Golden Keys
+      doc.circle(cx, cy, 65, 'S');
+      doc.circle(cx, cy, 56, 'S');
+      doc.setDrawColor(WM_GOLD);
+      doc.rect(cx - 34, cy - 35, 7, 70);
+      doc.rect(cx + 27, cy - 35, 7, 70);
+      doc.line(cx - 40, cy - 35, cx + 40, cy - 35);
+      doc.line(cx - 40, cy + 35, cx + 40, cy + 35);
+      doc.circle(cx, cy - 35, 30, 'S');
+      doc.line(cx - 18, cy - 18, cx + 18, cy + 18);
+      doc.line(cx + 18, cy - 18, cx - 18, cy + 18);
+      doc.circle(cx - 18, cy - 18, 3.5, 'S');
+      doc.circle(cx + 18, cy - 18, 3.5, 'S');
+    }
+  };
+
   // ==========================================
-  // PAGE 1: CAPA PERSONALIZADA DE ALTO LUXO
+  // PAGE 1: CAPA CONSAGRADA "CONSULTA DIVINA REAL"
+  // (Inspirado na Arte Mística de Spiritual Congruence & Mystical Awakening)
   // ==========================================
-  doc.setFillColor(26, 27, 47); // #1A1B2F
+  doc.setFillColor(14, 15, 30); // Profundo azul meia-noite cósmico
   doc.rect(0, 0, pageWidth, pageHeight, 'F');
 
-  // Subtle Gold inner border
+  // Background Runic & Celestial Texture
+  drawBackgroundMysticalRunes(12, 12, pageWidth - 24, pageHeight - 24);
+
+  // Outer Ornate Gold Border
   doc.setDrawColor(ACCENT_GOLD);
   doc.setLineWidth(0.7);
-  doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
+  doc.rect(9, 9, pageWidth - 18, pageHeight - 18);
 
+  // Inner Fine Gold Border
   doc.setDrawColor(ACCENT_GOLD);
   doc.setLineWidth(0.3);
-  doc.rect(12, 12, pageWidth - 24, pageHeight - 24);
+  doc.rect(11.5, 11.5, pageWidth - 23, pageHeight - 23);
 
-  // Decorative corner embellishments
+  // Corner Filigree Embellishments with sacred stars
   const cornerSize = 10;
   const corners = [
-    [14, 14],
-    [pageWidth - 14 - cornerSize, 14],
-    [14, pageHeight - 14 - cornerSize],
-    [pageWidth - 14 - cornerSize, pageHeight - 14 - cornerSize]
+    [13, 13],
+    [pageWidth - 13 - cornerSize, 13],
+    [13, pageHeight - 13 - cornerSize],
+    [pageWidth - 13 - cornerSize, pageHeight - 13 - cornerSize]
   ];
   corners.forEach(([cornerX, cornerY]) => {
     doc.setDrawColor(ACCENT_GOLD);
-    doc.circle(cornerX + cornerSize / 2, cornerY + cornerSize / 2, 2.5, 'S');
-    doc.circle(cornerX + cornerSize / 2, cornerY + cornerSize / 2, 1, 'F');
+    doc.setLineWidth(0.35);
+    doc.circle(cornerX + cornerSize / 2, cornerY + cornerSize / 2, 2.8, 'S');
+    doc.circle(cornerX + cornerSize / 2, cornerY + cornerSize / 2, 1.0, 'F');
   });
 
   const centerX = pageWidth / 2;
-  const emblemY = 54;
 
-  drawStarOfDavid(centerX, emblemY, 18, ACCENT_GOLD);
+  // 1. TOP MYSTICAL ELEMENTS (DIRETAMENTE DA IMAGEM 1.jfif):
+  // Ampulheta Esquerda do Tempo Sagrado
+  drawVintageHourglass(15, 14, 13, 23, ACCENT_GOLD);
+  // Ampulheta Direita do Tempo Sagrado
+  drawVintageHourglass(pageWidth - 15 - 13, 14, 13, 23, ACCENT_GOLD);
+  // Tríplice Lua Sagrada no Topo Central
+  drawTripleMoon(centerX, 18.5, 4.5, ACCENT_GOLD);
 
-  // Central life path number inside seal
+  // 2. GRANDES CARTOUCHE DE DESTAQUE: "CONSULTA DIVINA REAL"
+  const brandBoxY = 25;
+  const brandBoxW = 142;
+  const brandBoxH = 20;
+  doc.setFillColor(22, 24, 46);
+  doc.roundedRect(centerX - brandBoxW / 2, brandBoxY, brandBoxW, brandBoxH, 3, 3, 'F');
+  doc.setDrawColor(ACCENT_GOLD);
+  doc.setLineWidth(0.6);
+  doc.roundedRect(centerX - brandBoxW / 2, brandBoxY, brandBoxW, brandBoxH, 3, 3, 'S');
+  doc.setLineWidth(0.2);
+  doc.roundedRect(centerX - brandBoxW / 2 + 1.2, brandBoxY + 1.2, brandBoxW - 2.4, brandBoxH - 2.4, 2, 2, 'S');
+
+  // Nome em Destaque Absoluto
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
+  doc.setFontSize(16.5);
   doc.setTextColor(ACCENT_GOLD_LIGHT);
-  doc.text(`${report.lifePath.number}`, centerX, emblemY + 3.5, { align: 'center' });
+  doc.text('CONSULTA DIVINA REAL', centerX, brandBoxY + 9.5, { align: 'center' });
 
-  // Inscrição sagrada em latim
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
+  doc.setFontSize(6.8);
   doc.setTextColor(ACCENT_GOLD);
-  doc.text('IN NOMINE DIVINO • LUX, SAPIENTIA ET ABUNDANTIA', centerX, 86, { align: 'center' });
+  doc.text('✦ PORTAL DE ALTA MAGIA NUMEROLÓGICA & SABEDORIA ANCESTRAL ✦', centerX, brandBoxY + 15.5, { align: 'center' });
 
-  // Subtitle above title
+  // 3. MANDALA SAGRADA / FILTRO DOS SONHOS & CARTAS DE TARÔ (DIRETAMENTE DA IMAGEM 1.jfif)
+  const emblemY = 62;
+  // Cartas de Tarô à esquerda
+  drawTarotCardFan(54, emblemY - 2, 'left', ACCENT_GOLD);
+  // Cartas de Tarô à direita
+  drawTarotCardFan(156, emblemY - 2, 'right', ACCENT_GOLD);
+  // Filtro Sagrado / Mandala Cósmica no Centro
+  drawSacredDreamcatcher(centerX, emblemY, 13.5, ACCENT_GOLD, report.lifePath.number);
+
+  // 4. INSCRIÇÃO SAGRADA & TÍTULOS
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(9);
+  doc.setFontSize(7.2);
+  doc.setTextColor(ACCENT_GOLD);
+  doc.text('IN NOMINE DIVINO • LUX, SAPIENTIA ET ABUNDANTIA', centerX, 91, { align: 'center' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.5);
   doc.setTextColor(ACCENT_GOLD_LIGHT);
-  doc.text('SÍNTESE CÓSMICA & PROTOCOLO SAGRADO DE ABUNDÂNCIA', centerX, 95, { align: 'center' });
+  doc.text('SÍNTESE CÓSMICA & PROTOCOLO SAGRADO DE ABUNDÂNCIA', centerX, 99, { align: 'center' });
 
-  // Main Title
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(21);
+  doc.setFontSize(20);
   doc.setTextColor(255, 255, 255);
-  doc.text('MAPA NUMEROLÓGICO', centerX, 106, { align: 'center' });
+  doc.text('MAPA NUMEROLÓGICO', centerX, 109.5, { align: 'center' });
 
-  doc.setFontSize(15);
+  doc.setFontSize(14);
   doc.setTextColor(ACCENT_GOLD);
-  doc.text('& DIAGNÓSTICO DE PROSPERIDADE', centerX, 115, { align: 'center' });
+  doc.text('& DIAGNÓSTICO DE PROSPERIDADE', centerX, 117.5, { align: 'center' });
 
-  // Golden divider line
+  // Divisor dourado com sol central
   doc.setLineWidth(0.6);
   doc.setDrawColor(ACCENT_GOLD);
-  doc.line(centerX - 40, 121, centerX + 40, 121);
-  doc.circle(centerX, 121, 1.5, 'F');
+  doc.line(centerX - 42, 122.5, centerX + 42, 122.5);
+  doc.circle(centerX, 122.5, 1.5, 'F');
 
-  // Prepared especially for:
+  // 5. DOCUMENTO CONSAGRADO ESPECIALMENTE PARA:
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.5);
+  doc.setFontSize(8.2);
   doc.setTextColor(195, 202, 220);
-  doc.text('DOCUMENTO CONSAGRADO ESPECIALMENTE PARA:', centerX, 134, { align: 'center' });
+  doc.text('DOCUMENTO CONSAGRADO ESPECIALMENTE PARA:', centerX, 131, { align: 'center' });
 
-  // Full Name (Auto-scales to strictly stay inside borders with margin)
+  // Nome do Consulente
   const rawFullName = report.user.fullName.toUpperCase();
-  let nameFontSize = 16;
+  let nameFontSize = 15.5;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(nameFontSize);
   while (doc.getTextWidth(rawFullName) > 156 && nameFontSize > 10) {
@@ -306,27 +739,27 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
     doc.setFontSize(nameFontSize);
   }
   doc.setTextColor(255, 255, 255);
-  doc.text(rawFullName, centerX, 145, { align: 'center' });
+  doc.text(rawFullName, centerX, 140.5, { align: 'center' });
 
-  // Birth Details Box (Expanded width to ensure text never touches borders)
-  const infoBoxY = 156;
+  // Caixa de Dados de Nascimento e Código Cósmico
+  const infoBoxY = 147;
   const infoBoxW = 144;
-  doc.setFillColor(34, 37, 65);
-  doc.roundedRect(centerX - infoBoxW / 2, infoBoxY, infoBoxW, 22, 3, 3, 'F');
+  doc.setFillColor(28, 31, 56);
+  doc.roundedRect(centerX - infoBoxW / 2, infoBoxY, infoBoxW, 19, 2.5, 2.5, 'F');
   doc.setDrawColor(ACCENT_GOLD);
   doc.setLineWidth(0.4);
-  doc.roundedRect(centerX - infoBoxW / 2, infoBoxY, infoBoxW, 22, 3, 3, 'S');
+  doc.roundedRect(centerX - infoBoxW / 2, infoBoxY, infoBoxW, 19, 2.5, 2.5, 'S');
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8.2);
+  doc.setFontSize(7.8);
   doc.setTextColor(ACCENT_GOLD_LIGHT);
-  doc.text(`Nascimento: ${report.user.formattedDate}${report.user.birthTime ? ` às ${report.user.birthTime}` : ''}`, centerX, infoBoxY + 8.5, { align: 'center' });
-  doc.text(`Data de Emissão: ${report.generatedAt} • Código Sagrado: ${report.referralId}`, centerX, infoBoxY + 16, { align: 'center' });
+  doc.text(`Nascimento: ${report.user.formattedDate}${report.user.birthTime ? ` às ${report.user.birthTime}` : ''}`, centerX, infoBoxY + 7.5, { align: 'center' });
+  doc.text(`Data de Emissão: ${report.generatedAt} • Código Sagrado: ${report.referralId}`, centerX, infoBoxY + 14, { align: 'center' });
 
-  // 4 Core Numbers Summary Grid on Cover
-  const coverGridY = 191;
+  // 6. GRADE DOS 4 NÚMEROS FUNDAMENTAIS (ESTILO CARTAS DE TARÔ SAGRADO)
+  const coverGridY = 172;
   const cardW = 39;
-  const cardH = 32;
+  const cardH = 30;
   const startX = centerX - (cardW * 4 + 3 * 3.5) / 2;
 
   const coreItems = [
@@ -338,54 +771,59 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
 
   coreItems.forEach((item, idx) => {
     const cx = startX + idx * (cardW + 3.5);
-    doc.setFillColor(30, 32, 56);
+    doc.setFillColor(26, 28, 52);
     doc.roundedRect(cx, coverGridY, cardW, cardH, 2.5, 2.5, 'F');
     doc.setDrawColor(ACCENT_GOLD);
-    doc.setLineWidth(0.3);
+    doc.setLineWidth(0.35);
     doc.roundedRect(cx, coverGridY, cardW, cardH, 2.5, 2.5, 'S');
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(6.2);
     doc.setTextColor(ACCENT_GOLD_LIGHT);
-    doc.text(item.label, cx + cardW / 2, coverGridY + 7.5, { align: 'center' });
+    doc.text(item.label, cx + cardW / 2, coverGridY + 7.0, { align: 'center' });
 
-    doc.setFontSize(15);
+    doc.setFontSize(14.5);
     doc.setTextColor(255, 255, 255);
-    doc.text(`${item.num}`, cx + cardW / 2, coverGridY + 19, { align: 'center' });
+    doc.text(`${item.num}`, cx + cardW / 2, coverGridY + 17.5, { align: 'center' });
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.8);
     doc.setTextColor(ACCENT_GOLD);
-    doc.text(item.sub, cx + cardW / 2, coverGridY + 26, { align: 'center' });
+    doc.text(item.sub, cx + cardW / 2, coverGridY + 24.5, { align: 'center' });
   });
 
-  // Name optimization teaser on cover
-  const coverTeaserY = 236;
+  // 7. TEASER DE CONTEÚDO SAGRADO EXCLUSIVO
+  const coverTeaserY = 208;
   const teaserW = contentWidth - 10;
-  doc.setFillColor(35, 38, 68);
-  doc.roundedRect(centerX - teaserW / 2, coverTeaserY, teaserW, 25, 2.5, 2.5, 'F');
+  doc.setFillColor(30, 33, 60);
+  doc.roundedRect(centerX - teaserW / 2, coverTeaserY, teaserW, 22, 2.5, 2.5, 'F');
   doc.setDrawColor(ACCENT_GOLD);
   doc.setLineWidth(0.3);
-  doc.roundedRect(centerX - teaserW / 2, coverTeaserY, teaserW, 25, 2.5, 2.5, 'S');
+  doc.roundedRect(centerX - teaserW / 2, coverTeaserY, teaserW, 22, 2.5, 2.5, 'S');
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.8);
+  doc.setFontSize(7.5);
   doc.setTextColor(ACCENT_GOLD);
-  doc.text('CONTEÚDO SAGRADO EXCLUSIVO INCLUSO NESTE RELATÓRIO:', centerX, coverTeaserY + 6.5, { align: 'center' });
+  doc.text('CONTEÚDO SAGRADO EXCLUSIVO INCLUSO NESTE RELATÓRIO:', centerX, coverTeaserY + 6.2, { align: 'center' });
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.0);
-  doc.setTextColor(230, 235, 245);
-  doc.text('• Campo Biofotônico da Aura & Blindagem • Otimização do Nome para a Vibração 8', centerX, coverTeaserY + 13, { align: 'center' });
-  doc.text('• Banhos Sagrados • Frequências Solfeggio • Selos Sagrados • Livros Inspiradores', centerX, coverTeaserY + 19, { align: 'center' });
-
-  // Cover footer notice
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.8);
-  doc.setTextColor(170, 175, 195);
-  doc.text('Relatório emitido sob o rigor do Sistema Pitagórico, Cabala da Prosperidade e Princípios Bíblicos de Fartura.', centerX, pageHeight - 16, { align: 'center' });
+  doc.setTextColor(230, 235, 245);
+  doc.text('• Campo Biofotônico da Aura & Blindagem • Otimização do Nome para a Vibração 8', centerX, coverTeaserY + 12.2, { align: 'center' });
+  doc.text('• Banhos Sagrados • Frequências Solfeggio • Selos Sagrados • Livros Inspiradores', centerX, coverTeaserY + 17.8, { align: 'center' });
 
-  // Pix reminder on cover footer
+  // 8. VELAS RITUAIS NOS CANTOS INFERIORES (DIRETAMENTE DA IMAGEM 1.jfif)
+  drawRitualCandle(15, 237, 10, 18, ACCENT_GOLD);
+  drawRitualCandle(pageWidth - 15 - 10, 237, 10, 18, ACCENT_GOLD);
+
+  // Texto de Bênção & Rigor Pitagórico
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.6);
+  doc.setTextColor(175, 180, 202);
+  doc.text('Relatório emitido sob o rigor do Sistema Pitagórico, Cabala da Prosperidade e Princípios Bíblicos de Fartura.', centerX, 243, { align: 'center' });
+  doc.text('Que este mapa ilumine seus passos com sabedoria eterna e sele a sua aliança perpétua de fartura e paz.', centerX, 249, { align: 'center' });
+
+  // 9. PIX & LINK DE ATIVAÇÃO
   const coverPixPrefix = 'Se você se esqueceu de efetuar o pagamento pode fazer o pix através do link a seguir: ';
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
@@ -401,21 +839,31 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(6.5);
   doc.setTextColor(190, 195, 215);
-  doc.text(coverPixPrefix, coverStartX, pageHeight - 10.5);
+  doc.text(coverPixPrefix, coverStartX, pageHeight - 16);
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(6.8);
   doc.setTextColor(ACCENT_GOLD_LIGHT);
-  doc.textWithLink(coverLinkTxt, coverStartX + coverPrefixW, pageHeight - 10.5, { url: PIX_NUBANK_URL });
+  doc.textWithLink(coverLinkTxt, coverStartX + coverPrefixW, pageHeight - 16, { url: PIX_NUBANK_URL });
   doc.setDrawColor(243, 229, 171);
   doc.setLineWidth(0.3);
-  doc.line(coverStartX + coverPrefixW, pageHeight - 9.8, coverStartX + coverPrefixW + coverLinkW, pageHeight - 9.8);
-  doc.link(coverStartX + coverPrefixW - 1, pageHeight - 13.5, coverLinkW + 2, 4.5, { url: PIX_NUBANK_URL });
+  doc.line(coverStartX + coverPrefixW, pageHeight - 15.3, coverStartX + coverPrefixW + coverLinkW, pageHeight - 15.3);
+  doc.link(coverStartX + coverPrefixW - 1, pageHeight - 18.5, coverLinkW + 2, 4.5, { url: PIX_NUBANK_URL });
+
+  // Link Oficial de Ativação Consulta Divina Real
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.2);
+  doc.setTextColor(160, 165, 185);
+  const coverRefText = `Acesso & Portal Oficial: ${referralUrl}`;
+  doc.text(coverRefText, centerX, pageHeight - 11.5, { align: 'center' });
+  const coverRefW = doc.getTextWidth(coverRefText);
+  doc.link(centerX - coverRefW / 2, pageHeight - 14.5, coverRefW, 4.5, { url: referralUrl });
 
   // ==========================================
   // PAGE 2: CAMINHO DE VIDA E PERSONALIDADE
   // ==========================================
   doc.addPage();
+  drawEsotericWatermark(2);
   drawPageHeader(2, '1. Síntese da Essência & Tríade da Personalidade');
   drawPageFooter(2);
 
@@ -627,6 +1075,7 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
   // PAGE 3: DIAGNÓSTICO DE PROSPERIDADE & CÓDIGOS
   // ==========================================
   doc.addPage();
+  drawEsotericWatermark(3);
   drawPageHeader(3, '2. Diagnóstico de Prosperidade & Códigos Numéricos');
   drawPageFooter(3);
 
@@ -780,6 +1229,7 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
   // PAGE 4: OTIMIZAÇÃO VIBRACIONAL DO NOME & ASSINATURA DE PROSPERIDADE
   // ==========================================
   doc.addPage();
+  drawEsotericWatermark(4);
   drawPageHeader(4, '3. Otimização do Nome & Assinatura de Riqueza');
   drawPageFooter(4);
 
@@ -991,6 +1441,7 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
   // PAGE 5: CAMPO BIOFOTÔNICO DA AURA & BLINDAGEM ENERGÉTICA
   // ==========================================
   doc.addPage();
+  drawEsotericWatermark(5);
   drawPageHeader(5, '4. Campo Biofotônico da Aura & Blindagem');
   drawPageFooter(5);
 
@@ -1238,6 +1689,7 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
   // PAGE 6: BANHOS ENERGÉTICOS, CURA SONORA & FREQUÊNCIAS DE LUZ
   // ==========================================
   doc.addPage();
+  drawEsotericWatermark(6);
   drawPageHeader(6, '5. Banhos Energéticos & Frequências Quânticas');
   drawPageFooter(6);
 
@@ -1407,6 +1859,7 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
   // PAGE 7: SELOS MÍSTICOS, ESCRITURAS BÍBLICAS & CONSAGRAÇÃO FINAL
   // ==========================================
   doc.addPage();
+  drawEsotericWatermark(7);
   drawPageHeader(7, '6. Selos Místicos, Promessas Bíblicas & Aliança');
   drawPageFooter(7);
 
@@ -1551,6 +2004,7 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
   // PAGE 8: GUIA DE LEITURA INSPIRADORA & MESTRIA MENTAL
   // ==========================================
   doc.addPage();
+  drawEsotericWatermark(8);
   drawPageHeader(8, '7. Recomendações de Leitura & Mestria Mental');
   drawPageFooter(8);
 
