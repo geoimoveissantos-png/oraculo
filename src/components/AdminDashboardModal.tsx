@@ -121,15 +121,8 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
       refreshOrders();
       showNotification('Acesso autenticado com sucesso!', 'success');
     } else {
-      setAuthError('Usuário ou senha incorretos. Utilize as credenciais padrão indicadas abaixo.');
+      setAuthError('Usuário ou senha incorretos. Verifique os dados digitados e tente novamente.');
     }
-  };
-
-  const handleFillDemoCreds = () => {
-    const creds = getAdminCredentials();
-    setUsernameInput(creds.username);
-    setPasswordInput(creds.password);
-    setAuthError(null);
   };
 
   const handleLogout = () => {
@@ -411,24 +404,6 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                   <span>Acessar Painel Administrativo</span>
                 </button>
               </form>
-
-              {/* Default credentials prompt */}
-              <div className="mt-6 pt-5 border-t border-slate-800/80 bg-purple-950/20 rounded-xl p-3.5 border border-purple-500/20 text-center">
-                <p className="text-[11px] text-amber-200 font-medium flex items-center justify-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Credenciais Padrão do Sistema:</span>
-                </p>
-                <p className="text-xs text-slate-300 mt-1 font-mono">
-                  Usuário: <span className="text-amber-300 font-bold">admin</span> &nbsp;|&nbsp; Senha: <span className="text-amber-300 font-bold">admin123</span>
-                </p>
-                <button
-                  type="button"
-                  onClick={handleFillDemoCreds}
-                  className="mt-2 text-[11px] text-purple-300 hover:text-amber-300 underline underline-offset-2 cursor-pointer transition-colors"
-                >
-                  Clique aqui para preencher automaticamente
-                </button>
-              </div>
             </div>
           </div>
         ) : (

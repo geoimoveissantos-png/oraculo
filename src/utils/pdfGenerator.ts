@@ -26,7 +26,7 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
   const TEXT_MUTED = '#6B7280';
   const BORDER_COLOR = '#E2E8F0';
 
-  const referralUrl = `https://seudominio.com/?ref=${report.referralId}`;
+  const referralUrl = `https://consultadivina.netlify.app/?ref=${report.referralId}`;
   const PIX_NUBANK_URL = 'https://nubank.com.br/cobrar/dx851l/6aa2c5cb-60b9-4de0-aac4-53324bc8ec8d';
 
   // Helper: Draw Header (Pages 2 to 8)
@@ -109,7 +109,10 @@ export function generatePDF(report: NumerologyReport, customBooks?: RecommendedB
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.2);
     doc.setTextColor(TEXT_MUTED);
-    doc.text(`Link de Indicação & Ativação: ${referralUrl}`, pageWidth - margin, pageHeight - 3.8, { align: 'right' });
+    const refText = `Link de Indicação & Ativação: ${referralUrl}`;
+    doc.text(refText, pageWidth - margin, pageHeight - 3.8, { align: 'right' });
+    const refW = doc.getTextWidth(refText);
+    doc.link(pageWidth - margin - refW, pageHeight - 6.5, refW, 4, { url: referralUrl });
   };
 
   // Helper: Card background

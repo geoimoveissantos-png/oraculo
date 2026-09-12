@@ -39,6 +39,7 @@ import {
   X
 } from 'lucide-react';
 import { getRecommendedBooksForReport, generateBookCoverDataUrl } from '../utils/bookRecommendations';
+import { PreviewAudioReader } from './PreviewAudioReader';
 
 interface FullReportDashboardProps {
   report: NumerologyReport;
@@ -144,6 +145,9 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* NARRATION AUDIO PLAYER: Voz Feminina do Google (Botão OUVIR) */}
+      <PreviewAudioReader report={report} />
 
       {/* Core Numbers Overview Ribbon */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

@@ -14,7 +14,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, report 
   const [storyImageUrl, setStoryImageUrl] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://seudominio.com';
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://consultadivinareal.netlify.app';
   const customShareLink = `${baseUrl}/?ref=${encodeURIComponent(report.referralId)}`;
   const shareText = `Acabei de fazer meu Mapa Numerológico e Diagnóstico de Prosperidade! Descubra o seu também: ${customShareLink}`;
 

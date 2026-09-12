@@ -1,7 +1,8 @@
 import React from 'react';
 import { NumerologyReport } from '../types';
-import { Sparkles, Lock, ArrowRight, ShieldCheck, CheckCircle2, TrendingUp, Zap, FileText, ChevronRight } from 'lucide-react';
+import { Sparkles, Lock, ArrowRight, ShieldCheck, CheckCircle2, TrendingUp, Zap, FileText, ChevronRight, Volume2 } from 'lucide-react';
 import { AuraCaptureSection } from './AuraCaptureSection';
+import { PreviewAudioReader } from './PreviewAudioReader';
 
 interface FreePreviewCardProps {
   report: NumerologyReport;
@@ -36,14 +37,34 @@ export const FreePreviewCard: React.FC<FreePreviewCardProps> = ({
             </p>
           </div>
 
-          <button
-            onClick={onEditClick}
-            className="text-xs text-slate-400 hover:text-amber-300 underline underline-offset-4 cursor-pointer transition-colors"
-          >
-            Alterar dados
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                const btn = document.getElementById('btn-ouvir-previa');
+                if (btn) {
+                  btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  btn.click();
+                }
+              }}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-[#0b0c16] font-extrabold text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              title="Ouvir a narração completa da prévia com voz feminina do Google"
+            >
+              <Volume2 className="w-4 h-4 text-[#0b0c16]" />
+              <span>OUVIR</span>
+            </button>
+
+            <button
+              onClick={onEditClick}
+              className="text-xs text-slate-400 hover:text-amber-300 underline underline-offset-4 cursor-pointer transition-colors"
+            >
+              Alterar dados
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* NARRATION AUDIO PLAYER: Voz Feminina do Google (Botão OUVIR) */}
+      <PreviewAudioReader report={report} />
 
       {/* REVEALED SECTION: Caminho de Vida (Full Value Delivered) */}
       <div className="rounded-2xl bg-[#111322] border-2 border-amber-500/40 p-6 sm:p-8 relative shadow-2xl">

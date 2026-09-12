@@ -7,7 +7,7 @@ const ADMIN_CREDENTIALS_KEY = 'mapa_admin_credentials';
 
 const DEFAULT_CREDENTIALS = {
   username: 'admin',
-  password: 'admin123'
+  password: 'Romildo2009@'
 };
 
 // Seed realistic mock records if none exist, so the admin has immediate demonstration data
@@ -113,7 +113,14 @@ function getInitialSeedOrders(): AdminOrderRecord[] {
 export function getAdminCredentials() {
   try {
     const raw = localStorage.getItem(ADMIN_CREDENTIALS_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.password === 'admin123') {
+        parsed.password = DEFAULT_CREDENTIALS.password;
+        localStorage.setItem(ADMIN_CREDENTIALS_KEY, JSON.stringify(parsed));
+      }
+      return parsed;
+    }
   } catch {
     // fallback
   }
