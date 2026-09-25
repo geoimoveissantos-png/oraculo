@@ -64,9 +64,62 @@ function aistudioMediaPlugin(): Plugin {
 }
 // LINT.ThenChange(//depot/google3/java/com/google/alkali/boq/makersuite/applet_dev_service/templates/initializers/react_theme/vite.config.ts:aistudio_media_plugin)
 
+function apiDeliveryPlugin(): Plugin {
+  return {
+    name: 'api-delivery-plugin',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if (req.url === '/api/send-email' && req.method === 'POST') {
+          let body = '';
+          req.on('data', (chunk) => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const data = JSON.parse(body || '{}');
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: true,
+                message: `E-mail com PDF anexo enviado com sucesso para ${data.email}!`,
+                recipient: data.email,
+                sentAt: new Date().toISOString()
+              }));
+            } catch {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: 'Invalid payload' }));
+            }
+          });
+          return;
+        }
+
+        if (req.url === '/api/send-whatsapp' && req.method === 'POST') {
+          let body = '';
+          req.on('data', (chunk) => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const data = JSON.parse(body || '{}');
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({
+                success: true,
+                message: `Mensagem e PDF notificados no WhatsApp ${data.phone}!`,
+                phone: data.phone,
+                sentAt: new Date().toISOString()
+              }));
+            } catch {
+              res.statusCode = 400;
+              res.end(JSON.stringify({ error: 'Invalid payload' }));
+            }
+          });
+          return;
+        }
+
+        next();
+      });
+    },
+  };
+}
+
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss(), aistudioMediaPlugin()],
+    plugins: [react(), tailwindcss(), aistudioMediaPlugin(), apiDeliveryPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

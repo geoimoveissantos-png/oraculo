@@ -110,6 +110,15 @@ export interface AuraReading {
   clothingHarmonization: string;
 }
 
+export interface SemesterLuckyNumbers {
+  semesterLabel: string; // e.g., "2º Semestre de 2026"
+  numbers: number[]; // 6 distinct numbers between 1 and 60
+  formattedNumbers: string[]; // ['07', '14', '23', '38', '45', '52']
+  metaphysicalPurpose: string;
+  activationMantra: string;
+  bestDays: string[];
+}
+
 export interface NumerologyReport {
   user: {
     fullName: string;
@@ -128,6 +137,7 @@ export interface NumerologyReport {
   prosperity: ProsperityDiagnosis;
   personalYear: PersonalYearInfo;
   nameOptimization: NameOptimization;
+  semesterLuckyNumbers: SemesterLuckyNumbers;
   energyBaths: EnergyBath[];
   soundFrequencies: SoundFrequency[];
   sacredSymbolsAndVerses: SacredSymbolAndVerse[];

@@ -8,7 +8,8 @@ import {
   EnergyBath,
   SoundFrequency,
   SacredSymbolAndVerse,
-  AuraReading
+  AuraReading,
+  SemesterLuckyNumbers
 } from '../types';
 
 // Pythagorean letter values mapping
@@ -979,10 +980,67 @@ export function generateNumerologyReport(inputs: UserInputs): NumerologyReport {
     prosperity,
     personalYear,
     nameOptimization: calculateNameOptimization(inputs.fullName, expression.number),
+    semesterLuckyNumbers: generateSemesterLuckyNumbers(inputs.birthDate, inputs.fullName, lifePath.number, personalYear.yearNumber),
     energyBaths: getEnergyBaths(),
     soundFrequencies: getSoundFrequencies(),
     sacredSymbolsAndVerses: getSacredSymbolsAndVerses(lifePath.number, expression.number),
     aura: calculateAuraProfile(lifePath.number, expression.number)
+  };
+}
+
+export function generateSemesterLuckyNumbers(
+  birthDate: string,
+  fullName: string,
+  lifePathNum: number,
+  personalYearNum?: number
+): SemesterLuckyNumbers {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // 1 to 12
+  const semesterNum = month <= 6 ? 1 : 2;
+  const semesterLabel = `${semesterNum}º Semestre de ${year}`;
+
+  // Deterministic seed based on birthDate, fullName, lifePath, year and semester
+  const seedStr = `${birthDate.trim()}_${fullName.toUpperCase().trim()}_${lifePathNum}_${year}_S${semesterNum}`;
+  let seed = 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
+  }
+
+  const chosen = new Set<number>();
+
+  // Integrate the lifePathNum if within 1..60
+  if (lifePathNum >= 1 && lifePathNum <= 60) {
+    chosen.add(lifePathNum);
+  }
+  if (personalYearNum && personalYearNum >= 1 && personalYearNum <= 60 && chosen.size < 6) {
+    chosen.add(personalYearNum);
+  }
+
+  // Linear congruential generator to pick distinct numbers between 1 and 60
+  let current = seed;
+  let attempts = 0;
+  while (chosen.size < 6 && attempts < 2000) {
+    attempts++;
+    current = (current * 1664525 + 1013904223) >>> 0;
+    const num = (current % 60) + 1; // 1 to 60
+    chosen.add(num);
+  }
+
+  for (let n = 1; chosen.size < 6 && n <= 60; n++) {
+    chosen.add(n);
+  }
+
+  const sortedNumbers = Array.from(chosen).slice(0, 6).sort((a, b) => a - b);
+  const formattedNumbers = sortedNumbers.map((n) => n.toString().padStart(2, '0'));
+
+  return {
+    semesterLabel,
+    numbers: sortedNumbers,
+    formattedNumbers,
+    metaphysicalPurpose: 'Chaves numéricas de sincronicidade vibracional para Mega-Sena, loterias, decisões de investimento, abertura de negócios e assinatura de contratos prósperos.',
+    activationMantra: 'Eu sou a ressonância da sorte e da abundância sagrada. O Cosmos alinha números e oportunidades para minha vitória financeira.',
+    bestDays: ['Quinta-feira (Dia de Júpiter - Expansão & Dinheiro)', 'Domingo (Dia do Sol - Vitória & Magnetismo)']
   };
 }
 

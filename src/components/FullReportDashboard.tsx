@@ -36,9 +36,15 @@ import {
   Library,
   Play,
   ExternalLink,
-  X
+  X,
+  Copy,
+  Check,
+  Mail,
+  MessageSquare,
+  Send
 } from 'lucide-react';
 import { getRecommendedBooksForReport, generateBookCoverDataUrl } from '../utils/bookRecommendations';
+import { sendPdfByEmail, sendPdfByWhatsApp } from '../utils/deliveryService';
 import { PreviewAudioReader } from './PreviewAudioReader';
 
 interface FullReportDashboardProps {
@@ -52,7 +58,7 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
   onOpenShare,
   onNewCalculation,
 }) => {
-  const [activeTab, setActiveTab] = useState<'essence' | 'prosperity' | 'name_opt' | 'baths_sound' | 'sacred_symbols' | 'career' | 'year' | 'books'>('essence');
+  const [activeTab, setActiveTab] = useState<'essence' | 'prosperity' | 'name_opt' | 'baths_sound' | 'sacred_symbols' | 'career' | 'year' | 'books' | 'posters'>('essence');
   const [isDownloading, setIsDownloading] = useState(false);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const [isPdfVerified, setIsPdfVerified] = useState(() => {
@@ -64,12 +70,29 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
   });
   const [selectedFrequency, setSelectedFrequency] = useState<SoundFrequency | null>(null);
   const [recommendedBooks, setRecommendedBooks] = useState(() => getRecommendedBooksForReport(report));
+  const [copiedLuckyNumbers, setCopiedLuckyNumbers] = useState(false);
+  const [dispatchToast, setDispatchToast] = useState<{ message: string; type: 'success' | 'info' } | null>(null);
+  const [isDispatching, setIsDispatching] = useState<'email' | 'whatsapp' | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'info' = 'success') => {
+    setDispatchToast({ message, type });
+    setTimeout(() => setDispatchToast(null), 6000);
+  };
+
+  const handleCopyLuckyNumbers = () => {
+    const numStr = report.semesterLuckyNumbers.formattedNumbers.join(' - ');
+    navigator.clipboard.writeText(`Meus 6 Números Sagrados da Sorte (${report.semesterLuckyNumbers.semesterLabel}): ${numStr}`);
+    setCopiedLuckyNumbers(true);
+    showToast(`6 Números Sagrados da Sorte (${numStr}) copiados com sucesso!`, 'success');
+    setTimeout(() => setCopiedLuckyNumbers(false), 3000);
+  };
 
   const performDownload = () => {
     setIsDownloading(true);
     try {
-      generatePDF(report, recommendedBooks);
+      generatePDF(report, recommendedBooks, { autoSave: true });
       recordReportEmission(report, 'pago');
+      showToast('Download do PDF Oficial de 19 Páginas iniciado com sucesso!', 'success');
     } catch (err) {
       console.error('Error generating PDF:', err);
     } finally {
@@ -78,7 +101,6 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
   };
 
   const handleDownloadPDF = () => {
-    // Only ask for email or whatsapp confirmation after Pix confirmation when downloading the PDF
     if (!isPdfVerified) {
       setIsVerificationModalOpen(true);
       return;
@@ -86,7 +108,43 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
     performDownload();
   };
 
-  const handleVerificationSuccess = (contact: { email?: string; phone?: string }) => {
+  const handleSendEmailDirect = async () => {
+    if (!isPdfVerified || !report.user.email) {
+      setIsVerificationModalOpen(true);
+      return;
+    }
+    setIsDispatching('email');
+    try {
+      const pdfRes = generatePDF(report, recommendedBooks, { autoSave: false });
+      const res = await sendPdfByEmail(report, report.user.email, pdfRes.dataUri, pdfRes.filename);
+      showToast(res.message, res.success ? 'success' : 'info');
+    } catch (err) {
+      console.error('Error sending email:', err);
+      showToast('Não foi possível enviar o e-mail no momento. Baixe o PDF diretamente.', 'info');
+    } finally {
+      setIsDispatching(null);
+    }
+  };
+
+  const handleSendWhatsAppDirect = async () => {
+    if (!isPdfVerified || !report.user.phone) {
+      setIsVerificationModalOpen(true);
+      return;
+    }
+    setIsDispatching('whatsapp');
+    try {
+      const pdfRes = generatePDF(report, recommendedBooks, { autoSave: true });
+      const res = await sendPdfByWhatsApp(report, report.user.phone, pdfRes.blob, pdfRes.filename);
+      showToast(res.message, res.success ? 'success' : 'info');
+    } catch (err) {
+      console.error('Error sending WhatsApp:', err);
+      showToast('Não foi possível disparar pelo WhatsApp no momento.', 'info');
+    } finally {
+      setIsDispatching(null);
+    }
+  };
+
+  const handleVerificationSuccess = (contact: { email?: string; phone?: string; method?: 'email' | 'phone' }) => {
     if (contact.email) {
       report.user.email = contact.email;
     }
@@ -95,12 +153,29 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
     }
     updateOrderContact(report.referralId, contact.email, contact.phone);
     setIsPdfVerified(true);
-    performDownload();
+    recordReportEmission(report, 'pago');
   };
 
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-fadeIn">
+      {/* Toast Notification */}
+      {dispatchToast && (
+        <div className="fixed top-5 right-5 z-50 max-w-md p-4 rounded-2xl bg-[#13172e] border-2 border-amber-500/60 shadow-2xl text-white text-xs sm:text-sm flex items-start gap-3 animate-fadeIn">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <span className="font-bold text-amber-300 block mb-0.5">Notificação Sagrada</span>
+            <p className="text-slate-200">{dispatchToast.message}</p>
+          </div>
+          <button
+            onClick={() => setDispatchToast(null)}
+            className="text-slate-400 hover:text-white p-1 rounded-lg"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Top Banner: Unlocked Access & Primary Actions */}
       <div className="rounded-2xl bg-gradient-to-r from-[#171932] via-[#1f2347] to-[#171932] border-2 border-amber-500/50 p-6 sm:p-8 relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -109,7 +184,7 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold mb-3">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Acesso Completo Vitalício Liberado</span>
+              <span>Acesso Completo Vitalício Liberado • 19 Páginas Diagramadas</span>
             </div>
 
             <h1 className="font-cinzel text-2xl sm:text-3xl font-extrabold text-white">
@@ -121,22 +196,44 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
             </p>
           </div>
 
-          {/* Download and Share CTAs */}
-          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+          {/* Download and Multi-channel Delivery CTAs */}
+          <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
             <button
               id="btn-download-pdf-main"
               onClick={handleDownloadPDF}
               disabled={isDownloading}
-              className="flex-1 sm:flex-initial py-3.5 px-6 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-[#0b0c16] font-bold text-sm tracking-wide transition-all shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50"
+              className="flex-1 sm:flex-initial py-3.5 px-5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-[#0b0c16] font-bold text-xs sm:text-sm tracking-wide transition-all shadow-xl shadow-amber-500/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               <Download className="w-4 h-4" />
-              <span>{isDownloading ? 'Gerando PDF Oficial...' : 'Baixar Relatório Completo em PDF'}</span>
+              <span>{isDownloading ? 'Gerando PDF Oficial...' : 'Baixar PDF (19 Páginas)'}</span>
+            </button>
+
+            <button
+              id="btn-send-email-direct"
+              onClick={handleSendEmailDirect}
+              disabled={isDispatching === 'email'}
+              className="py-3.5 px-3.5 rounded-xl bg-[#121428] hover:bg-slate-800/90 border border-amber-500/40 text-amber-300 hover:text-amber-200 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              title="Receber PDF Anexo no E-mail"
+            >
+              <Mail className="w-4 h-4" />
+              <span className="hidden sm:inline">E-mail com Anexo</span>
+            </button>
+
+            <button
+              id="btn-send-whatsapp-direct"
+              onClick={handleSendWhatsAppDirect}
+              disabled={isDispatching === 'whatsapp'}
+              className="py-3.5 px-3.5 rounded-xl bg-[#0f231c] hover:bg-[#153429] border border-emerald-500/40 text-emerald-300 hover:text-emerald-200 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              title="Enviar PDF e Mensagem no WhatsApp"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">WhatsApp com Anexo</span>
             </button>
 
             <button
               id="btn-open-share-modal"
               onClick={onOpenShare}
-              className="py-3.5 px-4 rounded-xl bg-[#121426] hover:bg-slate-800/90 border border-slate-700 text-slate-200 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="py-3.5 px-3.5 rounded-xl bg-[#121426] hover:bg-slate-800/90 border border-slate-700 text-slate-200 text-xs font-semibold transition-all flex items-center justify-center gap-2 cursor-pointer"
               title="Compartilhar & Gerar Stories"
             >
               <Share2 className="w-4 h-4 text-amber-400" />
@@ -148,6 +245,73 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
 
       {/* NARRATION AUDIO PLAYER: Voz Feminina do Google (Botão OUVIR) */}
       <PreviewAudioReader report={report} />
+
+      {/* ========================================================================= */}
+      {/* SEÇÃO SAGRADA: 6 NÚMEROS DA SORTE PARA O SEMESTRE (01 A 60)              */}
+      {/* ========================================================================= */}
+      <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-[#171b38] via-[#1a1f42] to-[#171b38] border-2 border-amber-500/60 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-amber-500/20 pb-4 mb-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-bold uppercase tracking-wider mb-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Sincronicidade Quântica Calibrada • {report.semesterLuckyNumbers.semesterLabel}</span>
+            </div>
+            <h3 className="font-cinzel text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+              6 Números Sagrados da Sorte do Semestre (01 a 60)
+            </h3>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Calibrados com seu Caminho de Vida {report.lifePath.number} e Ano Pessoal {report.personalYear.yearNumber}. Ideais para Mega-Sena, loterias, apostas conscientes e assinatura de contratos.
+            </p>
+          </div>
+
+          <button
+            onClick={handleCopyLuckyNumbers}
+            className="py-2.5 px-4 rounded-xl bg-[#121427] hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer shrink-0 shadow-sm"
+            title="Copiar os 6 números"
+          >
+            {copiedLuckyNumbers ? (
+              <>
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-300 font-bold">Copiados!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4 text-amber-400" />
+                <span>Copiar Números</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* The 6 Golden Lottery Spheres */}
+        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 my-3">
+          {report.semesterLuckyNumbers.formattedNumbers.map((numStr, idx) => (
+            <div
+              key={idx}
+              className="relative group flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-b from-[#23274d] to-[#121429] border-2 border-amber-400/80 shadow-lg shadow-amber-500/20 hover:scale-110 transition-transform cursor-pointer"
+              title={`Número Sagrado 0${idx + 1}: ${numStr}`}
+            >
+              <div className="absolute inset-1 rounded-full border border-amber-300/30" />
+              <span className="font-cinzel text-base sm:text-lg font-extrabold text-amber-300 group-hover:text-amber-200">
+                {numStr}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Auspicious Days and Sacred Hours Footer */}
+        <div className="mt-4 pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-slate-300">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 font-bold">Dias de Maior Vibração Cósmica:</span>
+            <span className="text-white font-medium">{report.semesterLuckyNumbers.bestDays.join('   •   ')}</span>
+          </div>
+          <div className="text-[11px] text-slate-400 font-mono">
+            ★ Também gravados na Página 4 do seu PDF Oficial de 19 Páginas
+          </div>
+        </div>
+      </div>
 
       {/* Core Numbers Overview Ribbon */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -325,6 +489,18 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
         >
           <Library className="w-4 h-4 text-amber-400" />
           <span>8. Leituras Inspiradoras</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('posters')}
+          className={`py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold tracking-wide whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+            activeTab === 'posters'
+              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <span>9. Cartazes de Reflexão (Págs 9 e 10)</span>
         </button>
       </div>
 
@@ -1364,31 +1540,234 @@ export const FullReportDashboard: React.FC<FullReportDashboardProps> = ({
         </div>
       )}
 
+      {/* TAB CONTENT 9: CARTAZES DE REFLEXÃO (PÁGINAS 9 E 10) */}
+      {activeTab === 'posters' && (
+        <div className="space-y-6 animate-fadeIn">
+          {/* Header Banner */}
+          <div className="p-6 sm:p-8 rounded-2xl bg-[#131526] border border-amber-500/40 relative">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-amber-500/20 pb-4 mb-6">
+              <div>
+                <span className="text-xs uppercase font-bold tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Páginas 9 e 10 do seu Relatório Oficial em PDF
+                </span>
+                <h3 className="font-cinzel text-xl sm:text-2xl font-bold text-white mt-1">
+                  Mural de Cartazes Sagrados de Reflexão
+                </h3>
+              </div>
+              <div className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold">
+                4 Cartazes Inspiradores Prontos para Impressão & Quadro
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-200 leading-relaxed font-light mb-6">
+              Estes quatro cartazes místicos foram desenhados como âncoras psicovisuais para reprogramação da sua mente subconsciente. Cada obra é diagramada nas Páginas 9 e 10 do seu PDF oficial, pronta para emoldurar, colocar no seu altar, escritório ou tela de bloqueio.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* POSTER 1 */}
+              <div className="p-6 rounded-2xl bg-gradient-to-b from-[#191d3d] to-[#0e1022] border-2 border-amber-500/50 shadow-xl flex flex-col justify-between relative overflow-hidden group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-xl pointer-events-none" />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                      Cartaz 01 • Consciência Quântica
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">PDF Pág. 9</span>
+                  </div>
+
+                  <div className="py-6 px-4 rounded-xl bg-[#090b16] border border-amber-500/30 text-center space-y-2">
+                    <div className="text-amber-400 text-2xl font-serif">✦ ✦ ✦</div>
+                    <h4 className="font-cinzel text-lg sm:text-xl font-bold text-white tracking-wide">
+                      "A Única Forma de Chegar ao Impossível é Acreditar que é Possível"
+                    </h4>
+                    <span className="text-xs text-amber-300/80 font-serif italic block">
+                      — Alice através do Espelho & Sabedoria Cósmica
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs text-slate-300">
+                    <span className="text-amber-400 font-semibold block">Chave de Meditação:</span>
+                    <p className="leading-relaxed">
+                      O impossível é uma fronteira imaginária imposta pelo medo coletivo. Ao conectar-se com o Caminho de Vida {report.lifePath.number}, a sua mente passa a operar a partir do campo de infinitas possibilidades.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                  <span className="text-amber-300 font-medium italic">Afirmação: "Eu permito que o milagre se manifeste."</span>
+                </div>
+              </div>
+
+              {/* POSTER 2 */}
+              <div className="p-6 rounded-2xl bg-gradient-to-b from-[#1b1c2b] to-[#0f101b] border-2 border-slate-700 hover:border-amber-500/50 transition-colors shadow-xl flex flex-col justify-between relative overflow-hidden group">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-teal-300 bg-teal-500/10 px-2 py-0.5 rounded-full border border-teal-500/20">
+                      Cartaz 02 • Ruptura de Limites
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">PDF Pág. 9</span>
+                  </div>
+
+                  <div className="py-6 px-4 rounded-xl bg-[#0a0a14] border border-slate-700 text-center space-y-2">
+                    <div className="text-teal-400 text-2xl font-serif">⚡</div>
+                    <h4 className="font-cinzel text-lg sm:text-xl font-bold text-white tracking-wide">
+                      "Quando foi a última vez que você fez algo pela primeira vez?"
+                    </h4>
+                    <span className="text-xs text-teal-300/80 font-serif italic block">
+                      — Chamado ao Despertar e à Aventura da Alma
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs text-slate-300">
+                    <span className="text-teal-400 font-semibold block">Chave de Meditação:</span>
+                    <p className="leading-relaxed">
+                      A rotina anestesia os sentidos e enfraquece a centelha divina. O seu Ano Pessoal {report.personalYear.yearNumber} exige coragem para desbravar rotas desconhecidas e quebrar antigos padrões.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                  <span className="text-teal-300 font-medium italic">Afirmação: "Hoje eu inicio algo extraordinário."</span>
+                </div>
+              </div>
+
+              {/* POSTER 3 */}
+              <div className="p-6 rounded-2xl bg-gradient-to-b from-[#151c33] to-[#0a0f1f] border-2 border-cyan-500/40 shadow-xl flex flex-col justify-between relative overflow-hidden group">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-cyan-300 bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                      Cartaz 03 • Presença Absoluta
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">PDF Pág. 10</span>
+                  </div>
+
+                  <div className="py-6 px-4 rounded-xl bg-[#070b17] border border-cyan-500/30 text-center space-y-2">
+                    <div className="text-cyan-400 text-2xl font-serif">⏳</div>
+                    <h4 className="font-cinzel text-lg sm:text-xl font-bold text-white tracking-wide">
+                      "A Vida é Agora. O Tempo Não Volta."
+                    </h4>
+                    <span className="text-xs text-cyan-300/80 font-serif italic block">
+                      — Serenidade do Horizonte e do Agora
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs text-slate-300">
+                    <span className="text-cyan-400 font-semibold block">Chave de Meditação:</span>
+                    <p className="leading-relaxed">
+                      Não postergue o amor, o perdão nem as suas grandes decisões. O passado é poeira cósmica, o futuro é potencial em aberto; o poder de manifestação reside integralmente neste instante.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                  <span className="text-cyan-300 font-medium italic">Afirmação: "Estou plenamente desperto no agora."</span>
+                </div>
+              </div>
+
+              {/* POSTER 4 */}
+              <div className="p-6 rounded-2xl bg-gradient-to-b from-[#241f12] to-[#120f08] border-2 border-amber-400/60 shadow-xl flex flex-col justify-between relative overflow-hidden group">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-full border border-amber-500/30">
+                      Cartaz 04 • Alquimia da Vitória
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">PDF Pág. 10</span>
+                  </div>
+
+                  <div className="py-6 px-4 rounded-xl bg-[#0f0c05] border border-amber-500/40 text-center space-y-2">
+                    <div className="text-amber-400 text-2xl font-serif">☀️ ☀️ ☀️</div>
+                    <h4 className="font-cinzel text-lg sm:text-xl font-bold text-amber-200 tracking-wide">
+                      "Quando a Vida Lhe Der Cem Razões para Chorar, Mostre à Vida que Você Tem Mil Razões para Sorrir"
+                    </h4>
+                    <span className="text-xs text-amber-300/80 font-serif italic block">
+                      — Força Solar da Alma & Resiliência Divina
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 text-xs text-slate-300">
+                    <span className="text-amber-400 font-semibold block">Chave de Meditação:</span>
+                    <p className="leading-relaxed">
+                      A dor é apenas um casulo de transmutação. A sua aura possui a força solar para transformar qualquer lágrima em semente de vitória, prosperidade e plenitude.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                  <span className="text-amber-300 font-medium italic">Afirmação: "Minha gratidão é maior que qualquer tempestade."</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Print & Frame Callout */}
+            <div className="mt-8 p-5 rounded-2xl bg-gradient-to-r from-[#171b38] to-[#121428] border border-amber-500/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="space-y-1 text-center sm:text-left">
+                <h4 className="font-cinzel text-sm sm:text-base font-bold text-amber-300">
+                  Leve estes 4 Cartazes em Páginas Inteiras no seu PDF Oficial de 19 Páginas
+                </h4>
+                <p className="text-xs text-slate-300">
+                  Diagramados com proporções perfeitas para imprimir em papel couchê ou fotográfico A4 e emoldurar.
+                </p>
+              </div>
+
+              <button
+                onClick={handleDownloadPDF}
+                disabled={isDownloading}
+                className="py-3 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 text-[#0b0c16] font-bold text-xs sm:text-sm tracking-wide transition-all shadow-lg shadow-amber-500/20 flex items-center gap-2 cursor-pointer shrink-0"
+              >
+                <Download className="w-4 h-4" />
+                <span>Baixar PDF com Cartazes</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Sticky Action Bar */}
       <div className="p-6 rounded-2xl bg-[#0c0d19]/90 backdrop-blur-md border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
           <h4 className="font-cinzel font-bold text-white text-base">
-            Seu Relatório Completo está Pronto para Impressão
+            Seu Relatório Sagrado está Concluído (19 Páginas A4)
           </h4>
-          <p className="text-xs text-slate-400">
-            Exportação em 8 páginas diagramadas em formato A4 com diagnóstico, selos sagrados, banhos, frequências sonoras, promessas bíblicas e guia de leitura inspiradora.
+          <p className="text-xs text-slate-400 mt-0.5">
+            Inclui 6 Números da Sorte para o semestre (01 a 60), Selos Sagrados, Banhos, Frequências Sonoras, Leituras e os 4 Cartazes de Reflexão em alta definição com texto legível em 12px.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
           <button
             id="btn-download-pdf-bottom"
             onClick={handleDownloadPDF}
             disabled={isDownloading}
-            className="flex-1 sm:flex-initial py-3 px-6 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-[#0b0c16] font-bold text-xs sm:text-sm tracking-wide transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="flex-1 sm:flex-initial py-3 px-5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-[#0b0c16] font-bold text-xs sm:text-sm tracking-wide transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
-            <span>{isDownloading ? 'Baixando...' : 'Baixar PDF Oficial (8 Páginas A4)'}</span>
+            <span>{isDownloading ? 'Baixando...' : 'Baixar PDF (19 Páginas A4)'}</span>
+          </button>
+
+          <button
+            onClick={handleSendEmailDirect}
+            disabled={isDispatching === 'email'}
+            className="py-3 px-3.5 rounded-xl bg-[#121428] hover:bg-slate-800/90 border border-amber-500/40 text-amber-300 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Enviar PDF anexo ao seu E-mail"
+          >
+            <Mail className="w-4 h-4" />
+            <span className="hidden sm:inline">E-mail</span>
+          </button>
+
+          <button
+            onClick={handleSendWhatsAppDirect}
+            disabled={isDispatching === 'whatsapp'}
+            className="py-3 px-3.5 rounded-xl bg-[#0f231c] hover:bg-[#153429] border border-emerald-500/40 text-emerald-300 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Enviar no WhatsApp com PDF anexo"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span className="hidden sm:inline">WhatsApp</span>
           </button>
 
           <button
             onClick={onNewCalculation}
-            className="py-3 px-4 rounded-xl border border-slate-700 hover:border-slate-600 text-xs text-slate-300 hover:text-white transition-all cursor-pointer"
+            className="py-3 px-3.5 rounded-xl border border-slate-700 hover:border-slate-600 text-xs text-slate-300 hover:text-white transition-all cursor-pointer"
           >
             Fazer Outro Mapa
           </button>
